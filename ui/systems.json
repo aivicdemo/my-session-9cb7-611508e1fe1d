@@ -1,0 +1,240 @@
+[
+  {
+    "systemId": "itg-1",
+    "systemName": "日報管理業務システム",
+    "screens": [
+      {
+        "id": "scr-1790334054373",
+        "name": "日報入力・管理画面",
+        "purpose": "ユーザーが日報を入力・登録し、提出状況を管理・確認できる画面。1項目の日報入力フォーム、登録処理、確認表示、提出状況表示、提出通知トリガーの機能を統合",
+        "items": [
+          "日報入力フォーム（1項目）",
+          "日報内容テキストエリア",
+          "日報日付選択",
+          "日報登録ボタン",
+          "登録完了メッセージ",
+          "日報一覧表示",
+          "日報確認表示エリア",
+          "提出状況表示",
+          "提出済み・未提出フィルタ",
+          "提出通知送信ボタン",
+          "編集ボタン",
+          "削除ボタン"
+        ]
+      },
+      {
+        "id": "scr-1790334064893",
+        "name": "チーム活動ダッシュボード",
+        "purpose": "チームメンバーの日報提出状況を集計表示し、チーム活動を可視化して、日報統計情報をリアルタイムで把握するダッシュボード",
+        "items": [
+          "提出状況サマリーカード",
+          "本日提出済みメンバー一覧",
+          "未提出メンバー一覧",
+          "提出率推移グラフ",
+          "チーム活動タイムライン",
+          "日報統計情報パネル",
+          "平均作業時間表示",
+          "活動タイプ別集計表",
+          "メンバー別提出状況テーブル",
+          "期間選択フィルター",
+          "チーム選択ドロップダウン",
+          "詳細表示ボタン"
+        ]
+      }
+    ],
+    "tableDefinitions": [
+      {
+        "tableName": "ユーザー",
+        "purpose": "日報管理システムのユーザー情報を管理し、認証・認可・監査ログの基盤となるマスタテーブル",
+        "columns": [
+          {
+            "name": "ユーザーID",
+            "type": "uuid",
+            "required": true,
+            "description": "ユーザーの一意識別子"
+          },
+          {
+            "name": "ユーザー名",
+            "type": "varchar(100)",
+            "required": true,
+            "description": "ログイン時に使用するユーザー名"
+          },
+          {
+            "name": "メールアドレス",
+            "type": "varchar(100)",
+            "required": true,
+            "description": "ユーザーの連絡先メールアドレス"
+          },
+          {
+            "name": "氏名",
+            "type": "varchar(100)",
+            "required": true,
+            "description": "ユーザーの表示用氏名"
+          },
+          {
+            "name": "部門",
+            "type": "varchar(100)",
+            "required": false,
+            "description": "ユーザーが所属する部門"
+          },
+          {
+            "name": "役割",
+            "type": "varchar(100)",
+            "required": true,
+            "description": "ユーザーの権限レベル（管理者・マネージャー・一般等）"
+          },
+          {
+            "name": "ステータス",
+            "type": "varchar(100)",
+            "required": true,
+            "description": "ユーザーの状態（有効・無効・休止等）"
+          },
+          {
+            "name": "作成日時",
+            "type": "timestamp",
+            "required": true,
+            "description": "ユーザーレコード作成日時"
+          },
+          {
+            "name": "更新日時",
+            "type": "timestamp",
+            "required": true,
+            "description": "ユーザーレコード最終更新日時"
+          },
+          {
+            "name": "作成者",
+            "type": "varchar(100)",
+            "required": true,
+            "description": "ユーザーレコード作成者のユーザーID"
+          }
+        ]
+      },
+      {
+        "tableName": "日報",
+        "purpose": "従業員の日々の業務内容、成果、課題を記録・管理し、業務進捗の可視化と報告を実現するシステム",
+        "columns": [
+          {
+            "name": "日報ID",
+            "type": "uuid",
+            "required": true,
+            "description": "日報の一意識別子"
+          },
+          {
+            "name": "ユーザーID",
+            "type": "uuid",
+            "required": true,
+            "description": "日報を作成したユーザーの識別子、ユーザーテーブルへの外部キー"
+          },
+          {
+            "name": "報告日",
+            "type": "timestamp",
+            "required": true,
+            "description": "日報が対象とする業務日"
+          },
+          {
+            "name": "業務内容",
+            "type": "text",
+            "required": true,
+            "description": "当日実施した業務の詳細内容"
+          },
+          {
+            "name": "成果",
+            "type": "text",
+            "required": false,
+            "description": "当日の業務成果や完了した項目"
+          },
+          {
+            "name": "課題",
+            "type": "text",
+            "required": false,
+            "description": "当日発生した課題や懸念事項"
+          },
+          {
+            "name": "予定",
+            "type": "text",
+            "required": false,
+            "description": "翌日以降の予定や計画"
+          },
+          {
+            "name": "ステータス",
+            "type": "varchar(100)",
+            "required": true,
+            "description": "日報のステータス、下書き/提出/承認等"
+          },
+          {
+            "name": "作成日時",
+            "type": "timestamp",
+            "required": true,
+            "description": "日報が作成された日時"
+          },
+          {
+            "name": "更新日時",
+            "type": "timestamp",
+            "required": true,
+            "description": "日報が最後に更新された日時"
+          },
+          {
+            "name": "作成者ID",
+            "type": "uuid",
+            "required": true,
+            "description": "日報を作成したユーザーの識別子"
+          }
+        ]
+      },
+      {
+        "tableName": "日報項目",
+        "purpose": "日報に含まれる個別の項目を管理し、日報の構成要素と入力値を記録するテーブル",
+        "columns": [
+          {
+            "name": "項目ID",
+            "type": "uuid",
+            "required": true,
+            "description": "日報項目の一意識別子"
+          },
+          {
+            "name": "日報ID",
+            "type": "uuid",
+            "required": true,
+            "description": "親となる日報レコードへの外部キー参照"
+          },
+          {
+            "name": "項目名",
+            "type": "varchar(100)",
+            "required": true,
+            "description": "日報項目の名称（例：業務内容、成果、課題等）"
+          },
+          {
+            "name": "項目値",
+            "type": "text",
+            "required": true,
+            "description": "日報項目に入力された内容・値"
+          },
+          {
+            "name": "項目順序",
+            "type": "integer",
+            "required": true,
+            "description": "日報内での項目の表示順序"
+          },
+          {
+            "name": "作成日時",
+            "type": "timestamp",
+            "required": true,
+            "description": "日報項目が作成された日時"
+          },
+          {
+            "name": "更新日時",
+            "type": "timestamp",
+            "required": true,
+            "description": "日報項目が最後に更新された日時"
+          },
+          {
+            "name": "作成者ID",
+            "type": "uuid",
+            "required": true,
+            "description": "日報項目を作成したユーザーへの外部キー参照"
+          }
+        ]
+      }
+    ]
+  }
+]

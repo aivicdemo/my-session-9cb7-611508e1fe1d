@@ -1,0 +1,613 @@
+{
+  "systemId": "itg-1",
+  "systemName": "日報管理業務システム",
+  "cssTheme": "```css\n:root {\n  /* Primary & Accent */\n  --primary: #e8b4a8;\n  --primary-hover: #d99a8e;\n\n  /* Background Layers */\n  --bg-main: #1a1410;\n  --bg-card: #242019;\n  --bg-sidebar: #1f1b16;\n\n  /* Border & Divider */\n  --border: #3a342d;\n  --border-width: 1px;\n\n  /* Text */\n  --text: #e8e4df;\n  --text-muted: #9a9088;\n\n  /* Top Bar */\n  --top-bar-bg: #0f0c0a;\n  --top-bar-border: #2a241d;\n  --top-bar-text: #d4ccc5;\n\n  /* Typography */\n  --font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Hiragino Sans\", \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Meiryo\", sans-serif;\n\n  /* Spacing & Sizing */\n  --space-unit: 8px;\n  --control-height: 36px;\n  --radius-card: 6px;\n  --radius-control: 4px;\n\n  /* Shadow & Depth */\n  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.6);\n\n  /* Motion */\n  --motion-duration: 200ms;\n\n  /* Surface Texture */\n  --surface-texture: \n    linear-gradient(90deg, transparent 0%, rgba(232, 180, 168, 0.02) 50%, transparent 100%),\n    linear-gradient(0deg, transparent 0%, rgba(232, 180, 168, 0.01) 100%),\n    repeating-linear-gradient(\n      45deg,\n      transparent,\n      transparent 2px,\n      rgba(232, 180, 168, 0.005) 2px,\n      rgba(232, 180, 168, 0.005) 4px\n    );\n  --surface-texture-size: 100% 100%;\n  --surface-texture-position: 0 0;\n}\n```",
+  "screens": [
+    {
+      "id": "scr-1790334054373",
+      "name": "日報入力・管理画面",
+      "purpose": "ユーザーが日報を入力・登録し、提出状況を管理・確認できる画面。1項目の日報入力フォーム、登録処理、確認表示、提出状況表示、提出通知トリガーの機能を統合",
+      "items": [
+        "日報入力フォーム（1項目）",
+        "日報内容テキストエリア",
+        "日報日付選択",
+        "日報登録ボタン",
+        "登録完了メッセージ",
+        "日報一覧表示",
+        "日報確認表示エリア",
+        "提出状況表示",
+        "提出済み・未提出フィルタ",
+        "提出通知送信ボタン",
+        "編集ボタン",
+        "削除ボタン"
+      ]
+    },
+    {
+      "id": "scr-1790334064893",
+      "name": "チーム活動ダッシュボード",
+      "purpose": "チームメンバーの日報提出状況を集計表示し、チーム活動を可視化して、日報統計情報をリアルタイムで把握するダッシュボード",
+      "items": [
+        "提出状況サマリーカード",
+        "本日提出済みメンバー一覧",
+        "未提出メンバー一覧",
+        "提出率推移グラフ",
+        "チーム活動タイムライン",
+        "日報統計情報パネル",
+        "平均作業時間表示",
+        "活動タイプ別集計表",
+        "メンバー別提出状況テーブル",
+        "期間選択フィルター",
+        "チーム選択ドロップダウン",
+        "詳細表示ボタン"
+      ]
+    }
+  ],
+  "screenPanels": [
+    {
+      "screenId": "scr-1790334054373",
+      "panelHtml": "\n  <div class=\"panel-header\">\n    <h1 class=\"panel-title\">日報入力・管理</h1>\n    <p class=\"panel-subtitle\">今日の業務内容を入力し、チームに共有します</p>\n  </div>\n\n  <div class=\"input-section\">\n    <form id=\"reportForm\">\n      <div class=\"form-group\">\n        <label class=\"form-label\">報告日<span class=\"form-required\">*</span></label>\n        <input type=\"date\" id=\"reportDate\" class=\"date-input\" required>\n      </div>\n\n      <div class=\"form-group\">\n        <label class=\"form-label\">業務内容<span class=\"form-required\">*</span></label>\n        <textarea id=\"reportContent\" class=\"textarea-input\" placeholder=\"今日何をしたか、詳しく入力してください\" required></textarea>\n      </div>\n\n      <div class=\"button-group\">\n        <button type=\"submit\" class=\"btn btn-primary\">日報を登録</button>\n        <button type=\"reset\" class=\"btn btn-secondary\">クリア</button>\n      </div>\n    </form>\n  </div>\n\n  <div class=\"section-title\">本日の日報</div>\n  <div id=\"reportContainer\" class=\"report-list\">\n    <div class=\"empty-state\">\n      <div class=\"empty-state-icon\">📝</div>\n      <div class=\"empty-state-text\">本日の日報はまだ登録されていません</div>\n    </div>\n  </div>\n",
+      "initJs": "function(container, apiUrl, tables) {\n  const form = container.querySelector('#reportForm');\n  const reportDate = container.querySelector('#reportDate');\n  const reportContent = container.querySelector('#reportContent');\n  const reportContainer = container.querySelector('#reportContainer');\n\n  function setTodayDate() {\n    const today = new Date();\n    const year = today.getFullYear();\n    const month = String(today.getMonth() + 1).padStart(2, '0');\n    const day = String(today.getDate()).padStart(2, '0');\n    reportDate.value = year + '-' + month + '-' + day;\n  }\n\n  function showToast(message) {\n    const toast = document.createElement('div');\n    toast.className = 'toast';\n    toast.textContent = message;\n    document.body.appendChild(toast);\n    setTimeout(() => {\n      toast.style.animation = 'slideInUp 300ms ease-out reverse';\n      setTimeout(() => toast.remove(), 300);\n    }, 3000);\n  }\n\n  function formatDate(dateStr) {\n    const date = new Date(dateStr);\n    const year = date.getFullYear();\n    const month = String(date.getMonth() + 1).padStart(2, '0');\n    const day = String(date.getDate()).padStart(2, '0');\n    return year + '年' + month + '月' + day + '日';\n  }\n\n  function formatDateTime(dateStr) {\n    const date = new Date(dateStr);\n    const hours = String(date.getHours()).padStart(2, '0');\n    const minutes = String(date.getMinutes()).padStart(2, '0');\n    return formatDate(dateStr) + ' ' + hours + ':' + minutes;\n  }\n\n  function renderReports() {\n    const selectedDate = reportDate.value;\n    const today = new Date();\n    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');\n\n    if (!tables || !tables.reports || tables.reports.length === 0) {\n      reportContainer.innerHTML = '<div class=\"empty-state\"><div class=\"empty-state-icon\">📝</div><div class=\"empty-state-text\">本日の日報はまだ登録されていません</div></div>';\n      return;\n    }\n\n    const todayReports = tables.reports.filter(report => report.reportDate === todayStr);\n\n    if (todayReports.length === 0) {\n      reportContainer.innerHTML = '<div class=\"empty-state\"><div class=\"empty-state-icon\">📝</div><div class=\"empty-state-text\">本日の日報はまだ登録されていません</div></div>';\n      return;\n    }\n\n    reportContainer.innerHTML = todayReports.map((report, idx) => `\n      <div class=\"report-card\">\n        <div class=\"report-header\">\n          <div class=\"report-date\">${formatDate(report.reportDate)}</div>\n          <span class=\"report-status ${report.status === 'submitted' ? 'status-submitted' : 'status-draft'}\">${report.status === 'submitted' ? '提出済み' : '下書き'}</span>\n        </div>\n        <div class=\"report-content\">${report.content}</div>\n        <div class=\"report-meta\">\n          <span>作成: ${formatDateTime(report.createdAt)}</span>\n          ${report.submittedAt ? '<span>提出: ' + formatDateTime(report.submittedAt) + '</span>' : ''}\n        </div>\n        <div class=\"report-actions\">\n          ${report.status === 'submitted' ? '<button type=\"button\" class=\"btn btn-primary\" style=\"width: auto;\" data-submit-idx=\"' + idx + '\">通知を送信</button>' : ''}\n          ${report.status === 'draft' ? '<button type=\"button\" class=\"btn btn-secondary\" style=\"width: auto;\" data-edit-idx=\"' + idx + '\">編集</button>' : ''}\n          ${report.status === 'draft' ? '<button type=\"button\" class=\"btn-icon\" data-delete-idx=\"' + idx + '\">🗑️</button>' : ''}\n        </div>\n      </div>\n    `).join('');\n  }\n\n  form.addEventListener('submit', function(e) {\n    e.preventDefault();\n    const date = reportDate.value;\n    const content = reportContent.value.trim();\n\n    if (!date || !content) return;\n\n    const today = new Date();\n    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');\n    if (date !== todayStr) {\n      showToast('本日の日報のみ登録できます');\n      return;\n    }\n\n    if (!tables) tables = {};\n    if (!tables.reports) tables.reports = [];\n\n    const now = new Date().toISOString();\n    tables.reports.push({\n      id: Math.random().toString(36).substr(2, 9),\n      reportDate: date,\n      content: content,\n      status: 'draft',\n      createdAt: now,\n      submittedAt: null\n    });\n\n    showToast('日報を登録しました');\n    reportContent.value = '';\n    renderReports();\n  });\n\n  container.addEventListener('click', function(e) {\n    const submitBtn = e.target.closest('[data-submit-idx]');\n    if (submitBtn) {\n      const idx = parseInt(submitBtn.getAttribute('data-submit-idx'));\n      const today = new Date();\n      const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');\n      if (tables.reports[idx].reportDate === todayStr && tables.reports[idx].status === 'submitted') {\n        tables.reports[idx].submittedAt = new Date().toISOString();\n        showToast('チームに通知を送信しました');\n        renderReports();\n      }\n    }\n\n    const editBtn = e.target.closest('[data-edit-idx]');\n    if (editBtn) {\n      const idx = parseInt(editBtn.getAttribute('data-edit-idx'));\n      if (tables.reports[idx].status === 'draft') {\n        reportDate.value = tables.reports[idx].reportDate;\n        reportContent.value = tables.reports[idx].content;\n        tables.reports.splice(idx, 1);\n        renderReports();\n        showToast('編集モードに戻りました');\n      }\n    }\n\n    const deleteBtn = e.target.closest('[data-delete-idx]');\n    if (deleteBtn) {\n      const idx = parseInt(deleteBtn.getAttribute('data-delete-idx'));\n      if (tables.reports[idx].status === 'draft') {\n        tables.reports.splice(idx, 1);\n        showToast('日報を削除しました');\n        renderReports();\n      }\n    }\n  });\n\n  setTodayDate();\n  renderReports();\n}",
+      "method": "ai"
+    },
+    {
+      "screenId": "scr-1790334064893",
+      "panelHtml": "\n  <div class=\"panel-header\">\n    <div class=\"header-left\">\n      <h1>チーム活動ダッシュボード</h1>\n      <p>チームメンバーの日報提出状況を一目で確認</p>\n    </div>\n    <div class=\"header-right\">\n      <div class=\"filter-group\">\n        <span class=\"filter-label\">期間:</span>\n        <select id=\"periodFilter\" class=\"filter-select\">\n          <option value=\"today\">本日</option>\n          <option value=\"7days\">過去7日間</option>\n          <option value=\"30days\">過去30日間</option>\n        </select>\n      </div>\n    </div>\n  </div>\n\n  <div class=\"summary-cards\">\n    <div class=\"summary-card\">\n      <div class=\"summary-label\">本日提出済み</div>\n      <div class=\"summary-value\"><span id=\"submittedCount\">0</span>/5</div>\n      <div class=\"summary-sub\">メンバー</div>\n    </div>\n    <div class=\"summary-card\">\n      <div class=\"summary-label\">提出率</div>\n      <div class=\"summary-value\"><span id=\"submissionRate\">0</span>%</div>\n      <div class=\"summary-sub\">本日</div>\n    </div>\n    <div class=\"summary-card\">\n      <div class=\"summary-label\">未提出</div>\n      <div class=\"summary-value\"><span id=\"pendingCount\">5</span></div>\n      <div class=\"summary-sub\">メンバー</div>\n    </div>\n  </div>\n\n  <div class=\"content-grid\">\n    <div class=\"content-section\">\n      <div class=\"section-title\">✓ 提出済みメンバー</div>\n      <div id=\"submittedList\" class=\"member-list\">\n        <div class=\"empty-list\">メンバーがまだいません</div>\n      </div>\n    </div>\n\n    <div class=\"content-section\">\n      <div class=\"section-title\">⏱ 未提出メンバー</div>\n      <div id=\"pendingList\" class=\"member-list\">\n        <div class=\"empty-list\">全員提出済みです</div>\n      </div>\n    </div>\n  </div>\n\n  <div class=\"content-section\">\n    <div class=\"section-title\">メンバー別提出状況</div>\n    <div class=\"table-container\">\n      <table id=\"memberTable\">\n        <thead>\n          <tr>\n            <th>メンバー</th>\n            <th>本日ステータス</th>\n            <th>最終提出日時</th>\n            <th>操作</th>\n          </tr>\n        </thead>\n        <tbody id=\"tableBody\">\n          <tr>\n            <td colspan=\"4\" class=\"no-data\">\n              <div class=\"no-data-icon\">📊</div>\n              <div class=\"no-data-text\">メンバー情報を読み込み中...</div>\n            </td>\n          </tr>\n        </tbody>\n      </table>\n    </div>\n  </div>\n",
+      "initJs": "function(container, apiUrl, tables) {\n  const periodFilter = container.querySelector('#periodFilter');\n  const submittedCount = container.querySelector('#submittedCount');\n  const submissionRate = container.querySelector('#submissionRate');\n  const pendingCount = container.querySelector('#pendingCount');\n  const submittedList = container.querySelector('#submittedList');\n  const pendingList = container.querySelector('#pendingList');\n  const tableBody = container.querySelector('#tableBody');\n\n  const teamMembers = [\n    { id: 1, name: '田中太郎' },\n    { id: 2, name: '鈴木花子' },\n    { id: 3, name: '佐藤次郎' },\n    { id: 4, name: '高橋美咲' },\n    { id: 5, name: '伊藤健太' }\n  ];\n\n  function getTodayStr() {\n    const today = new Date();\n    return today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');\n  }\n\n  function formatDate(dateStr) {\n    const date = new Date(dateStr);\n    const year = date.getFullYear();\n    const month = String(date.getMonth() + 1).padStart(2, '0');\n    const day = String(date.getDate()).padStart(2, '0');\n    return year + '年' + month + '月' + day + '日';\n  }\n\n  function formatDateTime(dateStr) {\n    const date = new Date(dateStr);\n    const hours = String(date.getHours()).padStart(2, '0');\n    const minutes = String(date.getMinutes()).padStart(2, '0');\n    return formatDate(dateStr) + ' ' + hours + ':' + minutes;\n  }\n\n  function getMemberStatus(memberId) {\n    if (!tables || !tables.reports) return { submitted: false, lastDate: null };\n    const todayStr = getTodayStr();\n    const report = tables.reports.find(r => r.memberId === memberId && r.reportDate === todayStr && r.status === 'submitted');\n    return { submitted: !!report, lastDate: report ? report.submittedAt : null };\n  }\n\n  function updateDashboard() {\n    const todayStr = getTodayStr();\n    const submitted = teamMembers.filter(m => getMemberStatus(m.id).submitted);\n    const pending = teamMembers.filter(m => !getMemberStatus(m.id).submitted);\n    const rate = Math.round((submitted.length / teamMembers.length) * 100);\n\n    submittedCount.textContent = submitted.length;\n    pendingCount.textContent = pending.length;\n    submissionRate.textContent = rate;\n\n    if (submitted.length > 0) {\n      submittedList.innerHTML = submitted.map(m => `\n        <div class=\"member-item\">\n          <div class=\"member-name\">\n            <div class=\"member-icon\">✓</div>\n            <div>${m.name}</div>\n          </div>\n          <div class=\"member-detail\">${formatDateTime(getMemberStatus(m.id).lastDate || new Date().toISOString())}</div>\n        </div>\n      `).join('');\n    } else {\n      submittedList.innerHTML = '<div class=\"empty-list\">本日提出済みのメンバーはまだいません</div>';\n    }\n\n    if (pending.length > 0) {\n      pendingList.innerHTML = pending.map(m => `\n        <div class=\"member-item\">\n          <div class=\"member-name\">\n            <div class=\"member-icon\">⏱</div>\n            <div>${m.name}</div>\n          </div>\n          <div class=\"member-detail\">未提出</div>\n        </div>\n      `).join('');\n    } else {\n      pendingList.innerHTML = '<div class=\"empty-list\">全メンバーが提出済みです！</div>';\n    }\n\n    const rows = teamMembers.map((m, idx) => {\n      const status = getMemberStatus(m.id);\n      const statusClass = status.submitted ? 'status-submitted' : 'status-pending';\n      const statusText = status.submitted ? '提出済み' : '未提出';\n      const lastDateText = status.lastDate ? formatDateTime(status.lastDate) : '—';\n      return `\n        <tr>\n          <td>${m.name}</td>\n          <td><span class=\"status-badge ${statusClass}\">● ${statusText}</span></td>\n          <td>${lastDateText}</td>\n          <td><button class=\"btn-icon\" data-member-id=\"${m.id}\" title=\"詳細表示\">👁</button></td>\n        </tr>\n      `;\n    }).join('');\n\n    if (rows.length > 0) {\n      tableBody.innerHTML = rows;\n    } else {\n      tableBody.innerHTML = '<tr><td colspan=\"4\" class=\"no-data\"><div class=\"no-data-icon\">📊</div><div class=\"no-data-text\">メンバー情報がありません</div></td></tr>';\n    }\n  }\n\n  periodFilter.addEventListener('change', function(e) {\n    updateDashboard();\n  });\n\n  container.addEventListener('click', function(e) {\n    const btn = e.target.closest('[data-member-id]');\n    if (btn) {\n      const memberId = parseInt(btn.getAttribute('data-member-id'));\n      const member = teamMembers.find(m => m.id === memberId);\n      alert(member.name + 'さんの詳細情報表示機能は実装予定です');\n    }\n  });\n\n  updateDashboard();\n}",
+      "method": "ai"
+    }
+  ],
+  "tableDefinitions": [
+    {
+      "tableName": "ユーザー",
+      "purpose": "日報管理システムのユーザー情報を管理し、認証・認可・監査ログの基盤となるマスタテーブル",
+      "columns": [
+        {
+          "name": "ユーザーID",
+          "type": "uuid",
+          "required": true,
+          "description": "ユーザーの一意識別子"
+        },
+        {
+          "name": "ユーザー名",
+          "type": "varchar(100)",
+          "required": true,
+          "description": "ログイン時に使用するユーザー名"
+        },
+        {
+          "name": "メールアドレス",
+          "type": "varchar(100)",
+          "required": true,
+          "description": "ユーザーの連絡先メールアドレス"
+        },
+        {
+          "name": "氏名",
+          "type": "varchar(100)",
+          "required": true,
+          "description": "ユーザーの表示用氏名"
+        },
+        {
+          "name": "部門",
+          "type": "varchar(100)",
+          "required": false,
+          "description": "ユーザーが所属する部門"
+        },
+        {
+          "name": "役割",
+          "type": "varchar(100)",
+          "required": true,
+          "description": "ユーザーの権限レベル（管理者・マネージャー・一般等）"
+        },
+        {
+          "name": "ステータス",
+          "type": "varchar(100)",
+          "required": true,
+          "description": "ユーザーの状態（有効・無効・休止等）"
+        },
+        {
+          "name": "作成日時",
+          "type": "timestamp",
+          "required": true,
+          "description": "ユーザーレコード作成日時"
+        },
+        {
+          "name": "更新日時",
+          "type": "timestamp",
+          "required": true,
+          "description": "ユーザーレコード最終更新日時"
+        },
+        {
+          "name": "作成者",
+          "type": "varchar(100)",
+          "required": true,
+          "description": "ユーザーレコード作成者のユーザーID"
+        }
+      ]
+    },
+    {
+      "tableName": "日報",
+      "purpose": "従業員の日々の業務内容、成果、課題を記録・管理し、業務進捗の可視化と報告を実現するシステム",
+      "columns": [
+        {
+          "name": "日報ID",
+          "type": "uuid",
+          "required": true,
+          "description": "日報の一意識別子"
+        },
+        {
+          "name": "ユーザーID",
+          "type": "uuid",
+          "required": true,
+          "description": "日報を作成したユーザーの識別子、ユーザーテーブルへの外部キー"
+        },
+        {
+          "name": "報告日",
+          "type": "timestamp",
+          "required": true,
+          "description": "日報が対象とする業務日"
+        },
+        {
+          "name": "業務内容",
+          "type": "text",
+          "required": true,
+          "description": "当日実施した業務の詳細内容"
+        },
+        {
+          "name": "成果",
+          "type": "text",
+          "required": false,
+          "description": "当日の業務成果や完了した項目"
+        },
+        {
+          "name": "課題",
+          "type": "text",
+          "required": false,
+          "description": "当日発生した課題や懸念事項"
+        },
+        {
+          "name": "予定",
+          "type": "text",
+          "required": false,
+          "description": "翌日以降の予定や計画"
+        },
+        {
+          "name": "ステータス",
+          "type": "varchar(100)",
+          "required": true,
+          "description": "日報のステータス、下書き/提出/承認等"
+        },
+        {
+          "name": "作成日時",
+          "type": "timestamp",
+          "required": true,
+          "description": "日報が作成された日時"
+        },
+        {
+          "name": "更新日時",
+          "type": "timestamp",
+          "required": true,
+          "description": "日報が最後に更新された日時"
+        },
+        {
+          "name": "作成者ID",
+          "type": "uuid",
+          "required": true,
+          "description": "日報を作成したユーザーの識別子"
+        }
+      ]
+    },
+    {
+      "tableName": "日報項目",
+      "purpose": "日報に含まれる個別の項目を管理し、日報の構成要素と入力値を記録するテーブル",
+      "columns": [
+        {
+          "name": "項目ID",
+          "type": "uuid",
+          "required": true,
+          "description": "日報項目の一意識別子"
+        },
+        {
+          "name": "日報ID",
+          "type": "uuid",
+          "required": true,
+          "description": "親となる日報レコードへの外部キー参照"
+        },
+        {
+          "name": "項目名",
+          "type": "varchar(100)",
+          "required": true,
+          "description": "日報項目の名称（例：業務内容、成果、課題等）"
+        },
+        {
+          "name": "項目値",
+          "type": "text",
+          "required": true,
+          "description": "日報項目に入力された内容・値"
+        },
+        {
+          "name": "項目順序",
+          "type": "integer",
+          "required": true,
+          "description": "日報内での項目の表示順序"
+        },
+        {
+          "name": "作成日時",
+          "type": "timestamp",
+          "required": true,
+          "description": "日報項目が作成された日時"
+        },
+        {
+          "name": "更新日時",
+          "type": "timestamp",
+          "required": true,
+          "description": "日報項目が最後に更新された日時"
+        },
+        {
+          "name": "作成者ID",
+          "type": "uuid",
+          "required": true,
+          "description": "日報項目を作成したユーザーへの外部キー参照"
+        }
+      ]
+    }
+  ],
+  "presetSeedData": {
+    "ユーザー": [
+      {
+        "ユーザーID": "rec-001",
+        "ユーザー名": "admin_master",
+        "メールアドレス": "admin@company.jp",
+        "氏名": "山田太郎",
+        "部門": "情報システム部",
+        "役割": "管理者",
+        "ステータス": "有効",
+        "作成日時": "2024-01-15T09:30:00+09:00",
+        "更新日時": "2024-01-15T09:30:00+09:00",
+        "作成者": "system"
+      },
+      {
+        "ユーザーID": "rec-001",
+        "ユーザー名": "tanaka.taro",
+        "メールアドレス": "tanaka.taro@company.jp",
+        "氏名": "田中太郎",
+        "部門": "営業部",
+        "役割": "マネージャー",
+        "ステータス": "有効",
+        "作成日時": "2025-01-15 09:30:00",
+        "更新日時": "2025-01-15 09:30:00",
+        "作成者": "rec-admin-001"
+      },
+      {
+        "ユーザーID": "rec-001",
+        "ユーザー名": "tanaka.taro",
+        "メールアドレス": "tanaka.taro@company.jp",
+        "氏名": "田中太郎",
+        "部門": "営業部",
+        "役割": "一般",
+        "ステータス": "有効",
+        "作成日時": "2024-04-01 09:30:00",
+        "更新日時": "2025-01-15 14:22:00",
+        "作成者": "rec-admin-001"
+      },
+      {
+        "ユーザーID": "rec-001",
+        "ユーザー名": "tanaka.taro",
+        "メールアドレス": "tanaka.taro@company.jp",
+        "氏名": "田中太郎",
+        "部門": "経営企画室",
+        "役割": "管理者",
+        "ステータス": "有効",
+        "作成日時": "2024-04-01T09:00:00+09:00",
+        "更新日時": "2024-12-15T14:30:00+09:00",
+        "作成者": "rec-admin"
+      },
+      {
+        "ユーザーID": "rec-001",
+        "ユーザー名": "tanaka.hanako",
+        "メールアドレス": "tanaka.hanako@company.jp",
+        "氏名": "田中花子",
+        "部門": "人事部",
+        "役割": "マネージャー",
+        "ステータス": "有効",
+        "作成日時": "2024-04-01T09:30:00+09:00",
+        "更新日時": "2025-01-15T14:20:00+09:00",
+        "作成者": "rec-admin-001"
+      },
+      {
+        "ユーザーID": "rec-001",
+        "ユーザー名": "tanaka.taro",
+        "メールアドレス": "tanaka.taro@company.jp",
+        "氏名": "田中太郎",
+        "部門": "営業部第二課",
+        "役割": "マネージャー",
+        "ステータス": "有効",
+        "作成日時": "2023-06-15 09:30:00",
+        "更新日時": "2025-01-20 14:15:00",
+        "作成者": "rec-admin"
+      },
+      {
+        "ユーザーID": "rec-001",
+        "ユーザー名": "suzuki.hanako",
+        "メールアドレス": "suzuki.hanako@company.jp",
+        "氏名": "鈴木花子",
+        "部門": "営業部",
+        "役割": "マネージャー",
+        "ステータス": "休止",
+        "作成日時": "2023-04-15 09:30:00",
+        "更新日時": "2025-01-10 14:20:00",
+        "作成者": "rec-admin-001"
+      },
+      {
+        "ユーザーID": "rec-001",
+        "ユーザー名": "tanaka.taro",
+        "メールアドレス": "tanaka.taro@company.jp",
+        "氏名": "田中太郎",
+        "部門": "営業部",
+        "役割": "マネージャー",
+        "ステータス": "無効",
+        "作成日時": "2023-04-15 09:30:00",
+        "更新日時": "2025-01-31 14:20:00",
+        "作成者": "rec-admin-001"
+      },
+      {
+        "ユーザーID": "rec-001",
+        "ユーザー名": "partner_yamada_01",
+        "メールアドレス": "yamada.taro@partner-corp.jp",
+        "氏名": "山田太郎",
+        "部門": "外部パートナー（株式会社パートナーシップ）",
+        "役割": "ゲスト",
+        "ステータス": "有効",
+        "作成日時": "2024-11-15 10:30:00",
+        "更新日時": "2024-11-15 10:30:00",
+        "作成者": "rec-admin-001"
+      },
+      {
+        "ユーザーID": "rec-001",
+        "ユーザー名": "audit_viewer",
+        "メールアドレス": "audit.viewer@company.jp",
+        "氏名": "監査 太郎",
+        "部門": "内部監査室",
+        "役割": "監査担当者",
+        "ステータス": "有効",
+        "作成日時": "2024-04-01T09:00:00+09:00",
+        "更新日時": "2025-01-15T14:30:00+09:00",
+        "作成者": "rec-admin-001"
+      }
+    ],
+    "日報": [
+      {
+        "日報ID": "rec-001",
+        "ユーザーID": "usr-0847",
+        "報告日": "2024-12-13T00:00:00Z",
+        "業務内容": "ABC株式会社と新規取引に関する打ち合わせを実施。製造部門向けの営業提案資料を用いて商品説明を行った。",
+        "成果": "ABC株式会社の購買担当者（鈴木部長）から来年1月の試験導入に向けた前向きな返答を得た。見積書提出の承認を取得。",
+        "課題": "納期要件が当初予定より1ヶ月短縮される可能性があり、生産部門との調整が必要。",
+        "予定": "来週月曜日に見積書を提出予定。12月20日に再度訪問し契約条件を詰める。",
+        "ステータス": "提出",
+        "作成日時": "2024-12-13T18:45:00Z",
+        "更新日時": "2024-12-13T18:45:00Z",
+        "作成者ID": "usr-0847"
+      },
+      {
+        "日報ID": "rec-001",
+        "ユーザーID": "rec-u-042",
+        "報告日": "2024-12-19T00:00:00Z",
+        "業務内容": "ログイン機能のバグ修正、単体テストコード作成・実行",
+        "成果": "バグ3件修正完了、テストケース15件作成、カバレッジ92%達成",
+        "課題": "エッジケース対応で予定より1時間延長、明日レビュー予定",
+        "予定": "コードレビュー対応、統合テスト環境での動作確認",
+        "ステータス": "提出",
+        "作成日時": "2024-12-19T17:45:00Z",
+        "更新日時": "2024-12-19T17:45:00Z",
+        "作成者ID": "rec-u-042"
+      },
+      {
+        "日報ID": "rec-001",
+        "ユーザーID": "usr-0847",
+        "報告日": "2024-11-15T00:00:00Z",
+        "業務内容": "システム開発プロジェクトの進捗管理、ステークホルダー会議開催、リスク評価実施",
+        "成果": "開発チームとの課題共有完了、対策案3件を経営層に報告",
+        "課題": "API統合作業が計画比3日遅延、テスト環境の構築遅れにより納期リスク発生",
+        "予定": "遅延原因の詳細分析、追加リソース配置の検討、納期短縮対策の実行開始",
+        "ステータス": "提出",
+        "作成日時": "2024-11-15T17:30:00Z",
+        "更新日時": "2024-11-15T17:30:00Z",
+        "作成者ID": "usr-0847"
+      },
+      {
+        "日報ID": "rec-001",
+        "ユーザーID": "usr-0847",
+        "報告日": "2024-12-31",
+        "業務内容": "12月度の売上・仕入帳簿の集計、経費精算書の確認、銀行残高照合を実施",
+        "成果": "月次決算書の作成完了、帳簿の不一致2件を特定し修正完了",
+        "課題": "給与データの遅延提出により決算確定が1日遅延の見込み",
+        "予定": "1月6日に経理部長への決算報告、1月中旬に税理士への提出資料準備",
+        "ステータス": "提出",
+        "作成日時": "2024-12-31 17:45:00",
+        "更新日時": "2024-12-31 17:45:00",
+        "作成者ID": "usr-0847"
+      },
+      {
+        "日報ID": "rec-001",
+        "ユーザーID": "user-047",
+        "報告日": "2024-12-19",
+        "業務内容": "新商品『スマートオフィスパック』の企画案作成。競合分析、ターゲット市場調査、価格戦略の検討を実施",
+        "成果": "企画案ドキュメント完成。提案資料（PowerPoint 25枚）作成完了。経営層向けプレゼン資料の初版化",
+        "課題": "製造部門との仕様調整が未了。コスト試算で目標利益率達成に課題あり",
+        "予定": "明日営業部長との事前打ち合わせ。来週火曜に経営会議でレビュー予定",
+        "ステータス": "提出",
+        "作成日時": "2024-12-19T18:45:00",
+        "更新日時": "2024-12-19T18:45:00",
+        "作成者ID": "user-047"
+      },
+      {
+        "日報ID": "rec-001",
+        "ユーザーID": "usr-0847",
+        "報告日": "2024-12-20T00:00:00Z",
+        "業務内容": "顧客問い合わせ対応12件、システム障害報告3件の初期対応と状況確認を実施",
+        "成果": "緊急案件2件を解決、残り10件は技術チームへエスカレーション完了",
+        "課題": "月末繁忙期のため対応時間が平均35分と通常より長延、未解決案件の引き継ぎ漏れリスク",
+        "予定": "明日は未解決案件10件の進捗確認と顧客への進捗報告、新入社員への引き継ぎ研修実施予定",
+        "ステータス": "提出",
+        "作成日時": "2024-12-20T18:45:00Z",
+        "更新日時": "2024-12-20T19:30:00Z",
+        "作成者ID": "usr-0847"
+      },
+      {
+        "日報ID": "rec-001",
+        "ユーザーID": "user-0847",
+        "報告日": "2024-12-20T00:00:00Z",
+        "業務内容": "A型プレス機3台の稼働管理、部品加工ロット#2401～#2403の進捗確認、品質検査実施",
+        "成果": "予定数量の98%を完了。不良品率0.8%。納期遵守達成",
+        "課題": "プレス機#2号機で油圧異常警告が多発。部品#2402ロットで寸法超過不良が3個発生",
+        "予定": "油圧システム点検手配、不良品の原因分析と再加工スケジュール調整",
+        "ステータス": "提出",
+        "作成日時": "2024-12-20T16:45:00Z",
+        "更新日時": "2024-12-20T17:12:00Z",
+        "作成者ID": "user-0847"
+      },
+      {
+        "日報ID": "rec-001",
+        "ユーザーID": "usr-045",
+        "報告日": "2025-01-15T00:00:00Z",
+        "業務内容": "新卒採用選考（最終面接）3名実施、内定者3名の入社手続き書類確認・修正対応",
+        "成果": "最終面接合格者3名決定、内定通知書発送完了。入社手続き書類提出率83%達成",
+        "課題": "内定者1名の住所確認書類未提出。提出期限2月末までに対応要",
+        "予定": "明日内定者説明会開催（14:00〜）。未提出者への督促メール送信予定",
+        "ステータス": "提出",
+        "作成日時": "2025-01-15T17:30:00Z",
+        "更新日時": "2025-01-15T17:45:00Z",
+        "作成者ID": "usr-045"
+      },
+      {
+        "日報ID": "rec-001",
+        "ユーザーID": "usr-0847",
+        "報告日": "2024-12-20T00:00:00Z",
+        "業務内容": "A社からの受注3件の処理、納期調整2件、請求書発行",
+        "成果": "受注処理完了3件、納期変更対応2件、請求書3枚発行済み",
+        "課題": "B社納期短縮要望への在庫確認に1日要する見込み",
+        "予定": "B社納期確認回答、C社見積もり提出準備",
+        "ステータス": "提出",
+        "作成日時": "2024-12-20T17:30:00Z",
+        "更新日時": "2024-12-20T17:45:00Z",
+        "作成者ID": "usr-0847"
+      },
+      {
+        "日報ID": "rec-001",
+        "ユーザーID": "usr-0847",
+        "報告日": "2024-11-15T00:00:00Z",
+        "業務内容": "A型製品ロット#2411-0847の全数検査実施、不適合品の分類と原因分析",
+        "成果": "検査完了500個中12個の不適合を検出、不適合率2.4%、原因は金型摩耗と判定",
+        "課題": "金型交換予定が12月中旬のため、それまでの品質維持が課題。改善指示書を製造部に発行済み",
+        "予定": "明日は改善指示の実施状況確認、製造部との改善打ち合わせ予定",
+        "ステータス": "提出",
+        "作成日時": "2024-11-15T17:30:00Z",
+        "更新日時": "2024-11-15T17:45:00Z",
+        "作成者ID": "usr-0847"
+      }
+    ],
+    "日報項目": [
+      {
+        "項目ID": "rec-001",
+        "日報ID": "rep-2025-0147",
+        "項目名": "商談内容",
+        "項目値": "株式会社エースシステムズ様との初期接触。クラウド型在庫管理システムの導入検討。予算規模500万円程度、導入時期は4月を想定。次回訪問は来週金曜日に決定。",
+        "項目順序": 2,
+        "作成日時": "2025-01-16T18:45:00+09:00",
+        "更新日時": "2025-01-16T18:45:00+09:00",
+        "作成者ID": "usr-0892"
+      },
+      {
+        "項目ID": "rec-001",
+        "日報ID": "rep-20250115-001",
+        "項目名": "技術的課題",
+        "項目値": "APIレスポンスタイムが目標の200msを超過（現在平均250ms）。データベースクエリの最適化が必要。",
+        "項目順序": 3,
+        "作成日時": "2025-01-15T18:30:00+09:00",
+        "更新日時": "2025-01-15T18:30:00+09:00",
+        "作成者ID": "usr-engineer-002"
+      },
+      {
+        "項目ID": "rec-001",
+        "日報ID": "rep-20250115-001",
+        "項目名": "マイルストーン達成状況",
+        "項目値": "Phase 2 リリース予定通り完了。ユーザー認証機能、決済連携、レポート機能の3機能を実装。テスト合格率98%。",
+        "項目順序": 1,
+        "作成日時": "2025-01-15T09:30:00+09:00",
+        "更新日時": "2025-01-15T09:30:00+09:00",
+        "作成者ID": "usr-pm-002"
+      },
+      {
+        "項目ID": "rec-001",
+        "日報ID": "rep-2025-0147",
+        "項目名": "顧客対応件数と解決状況",
+        "項目値": "本日対応件数23件、当日解決率87%（20件解決）、保留中3件",
+        "項目順序": 1,
+        "作成日時": "2025-01-15 17:30:00",
+        "更新日時": "2025-01-15 17:30:00",
+        "作成者ID": "usr-staff-0284"
+      },
+      {
+        "項目ID": "rec-001",
+        "日報ID": "rep-2024-1127-001",
+        "項目名": "市場調査結果",
+        "項目値": "20代女性ターゲットの購買意欲は前月比+12%。SNS経由の認知度が68%と高い。競合商品との価格差は平均3,200円。",
+        "項目順序": 1,
+        "作成日時": "2024-11-27T09:30:00+09:00",
+        "更新日時": "2024-11-27T14:15:00+09:00",
+        "作成者ID": "usr-0847"
+      },
+      {
+        "項目ID": "rec-001",
+        "日報ID": "rep-2024-12-15-001",
+        "項目名": "生産実績",
+        "項目値": "A型部品 850個生産、歩留まり98.2%、目標達成",
+        "項目順序": 1,
+        "作成日時": "2024-12-15T17:30:00+09:00",
+        "更新日時": "2024-12-15T17:30:00+09:00",
+        "作成者ID": "usr-0042"
+      },
+      {
+        "項目ID": "rec-001",
+        "日報ID": "rep-2025-0142",
+        "項目名": "採用面接実績",
+        "項目値": "本日実施数：5件。営業職3名（評価A2名、B1名）、企画職2名（評価B）。内定候補者1名決定。",
+        "項目順序": 1,
+        "作成日時": "2025-01-15T17:30:00+09:00",
+        "更新日時": "2025-01-15T17:30:00+09:00",
+        "作成者ID": "usr-0847"
+      },
+      {
+        "項目ID": "rec-001",
+        "日報ID": "rep-20250115-001",
+        "項目名": "受注確定案件",
+        "項目値": "A社システム導入案件（契約金額480万円、納期2025年3月末）確定。B社追加受注2件（合計320万円）",
+        "項目順序": 1,
+        "作成日時": "2025-01-15T09:30:00+09:00",
+        "更新日時": "2025-01-15T09:30:00+09:00",
+        "作成者ID": "usr-0847"
+      },
+      {
+        "項目ID": "rec-001",
+        "日報ID": "rep-20250115-qa",
+        "項目名": "テスト実行結果",
+        "項目値": "総ケース数：847件、成功：823件、失敗：24件、スキップ：0件。成功率97.2%。",
+        "項目順序": 1,
+        "作成日時": "2025-01-15T09:30:00+09:00",
+        "更新日時": "2025-01-15T14:45:00+09:00",
+        "作成者ID": "usr-0847"
+      },
+      {
+        "項目ID": "rec-001",
+        "日報ID": "rep-20250115-001",
+        "項目名": "チーム売上目標達成度",
+        "項目値": "目標 2,500万円に対し実績 2,180万円（達成率87.2%）。大型案件3件が予定より遅延。",
+        "項目順序": 1,
+        "作成日時": "2025-01-15T18:30:00+09:00",
+        "更新日時": "2025-01-15T18:30:00+09:00",
+        "作成者ID": "usr-0847"
+      }
+    ]
+  },
+  "shellHtml": "<!doctype html>\n<html lang=\"ja\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>My 日報</title>\n  <style>\n:root {\n  --primary: #e8b4a8;\n  --primary-hover: #d99a8e;\n  --bg-main: #1a1410;\n  --bg-card: #242019;\n  --bg-sidebar: #1f1b16;\n  --border: #3a342d;\n  --border-width: 1px;\n  --text: #e8e4df;\n  --text-muted: #9a9088;\n  --top-bar-bg: #0f0c0a;\n  --top-bar-border: #2a241d;\n  --top-bar-text: #d4ccc5;\n  --font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Hiragino Sans\", \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Meiryo\", sans-serif;\n  --space-unit: 8px;\n  --control-height: 36px;\n  --radius-card: 6px;\n  --radius-control: 4px;\n  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.6);\n  --motion-duration: 200ms;\n  --surface-texture: \n    linear-gradient(90deg, transparent 0%, rgba(232, 180, 168, 0.02) 50%, transparent 100%),\n    linear-gradient(0deg, transparent 0%, rgba(232, 180, 168, 0.01) 100%),\n    repeating-linear-gradient(\n      45deg,\n      transparent,\n      transparent 2px,\n      rgba(232, 180, 168, 0.005) 2px,\n      rgba(232, 180, 168, 0.005) 4px\n    );\n  --surface-texture-size: 100% 100%;\n  --surface-texture-position: 0 0;\n}\n\n* {\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n}\n\nhtml, body {\n  width: 100%;\n  height: 100%;\n  font-family: var(--font-family);\n  background: var(--bg-main);\n  color: var(--text);\n  line-height: 1.5;\n}\n\nbody {\n  display: flex;\n  flex-direction: column;\n}\n\n[data-aivic-shell-pattern=\"sidebar\"] {\n  display: flex;\n  flex-direction: row;\n  width: 100%;\n  height: 100%;\n}\n\n.shell-header {\n  position: fixed;\n  top: 0;\n  left: 0;\n  right: 0;\n  height: 56px;\n  background: var(--top-bar-bg);\n  border-bottom: var(--border-width) solid var(--top-bar-border);\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 0 24px;\n  z-index: 100;\n}\n\n.shell-header-left {\n  display: flex;\n  align-items: center;\n  gap: 16px;\n}\n\n.shell-logo {\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--top-bar-text);\n  letter-spacing: 0.5px;\n}\n\n.shell-header-right {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n}\n\n.user-avatar {\n  width: 32px;\n  height: 32px;\n  border-radius: 50%;\n  background: var(--primary);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  font-size: 13px;\n  font-weight: 600;\n  color: #fff;\n}\n\n.user-name {\n  font-size: 13px;\n  color: var(--top-bar-text);\n}\n\n.logout-link {\n  font-size: 12px;\n  color: var(--text-muted);\n  text-decoration: none;\n  transition: color var(--motion-duration);\n}\n\n.logout-link:hover {\n  color: var(--primary);\n}\n\n.shell-sidebar {\n  position: fixed;\n  left: 0;\n  top: 56px;\n  width: 200px;\n  height: calc(100vh - 56px);\n  background: var(--bg-sidebar);\n  border-right: var(--border-width) solid var(--border);\n  overflow-y: auto;\n  padding: 24px 0;\n}\n\n.sidebar-nav {\n  list-style: none;\n}\n\n.sidebar-nav-item {\n  margin: 0;\n}\n\n.sidebar-nav-link {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 12px 20px;\n  font-size: 13px;\n  color: var(--text-muted);\n  text-decoration: none;\n  cursor: pointer;\n  transition: all var(--motion-duration);\n  border-left: 3px solid transparent;\n}\n\n.sidebar-nav-link:hover {\n  color: var(--text);\n  background: rgba(232, 180, 168, 0.05);\n}\n\n.sidebar-nav-link.aivic-active {\n  color: var(--primary);\n  border-left-color: var(--primary);\n  background: rgba(232, 180, 168, 0.08);\n}\n\n.content-wrapper {\n  margin-left: 200px;\n  margin-top: 56px;\n  width: calc(100% - 200px);\n  height: calc(100vh - 56px);\n  overflow-y: auto;\n}\n\n.content-area {\n  width: 100%;\n  height: 100%;\n  background: var(--bg-main);\n  background-image: var(--surface-texture);\n  background-size: var(--surface-texture-size);\n  background-position: var(--surface-texture-position);\n}\n\n[data-aivic-panel] {\n  width: 100%;\n  height: 100%;\n  padding: 32px;\n  overflow-y: auto;\n}\n\n.card {\n  background: var(--bg-card);\n  border: var(--border-width) solid var(--border);\n  border-radius: var(--radius-card);\n  padding: 20px;\n  box-shadow: var(--shadow-card);\n  transition: all var(--motion-duration);\n}\n\n.card:hover {\n  border-color: rgba(232, 180, 168, 0.3);\n}\n\n.btn {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 8px;\n  height: var(--control-height);\n  padding: 0 16px;\n  font-size: 13px;\n  font-weight: 500;\n  border: var(--border-width) solid transparent;\n  border-radius: var(--radius-control);\n  cursor: pointer;\n  transition: all var(--motion-duration);\n  font-family: var(--font-family);\n}\n\n.btn-primary {\n  background: var(--primary);\n  color: #fff;\n}\n\n.btn-primary:hover {\n  background: var(--primary-hover);\n}\n\n.btn-primary:disabled {\n  background: var(--text-muted);\n  cursor: not-allowed;\n  opacity: 0.5;\n}\n\n.btn-secondary {\n  background: transparent;\n  color: var(--text-muted);\n  border-color: var(--border);\n}\n\n.btn-secondary:hover {\n  color: var(--text);\n  border-color: var(--text-muted);\n}\n\n.btn-icon {\n  width: var(--control-height);\n  padding: 0;\n  background: transparent;\n  color: var(--text-muted);\n  border: none;\n}\n\n.btn-icon:hover {\n  color: var(--text);\n}\n\n.input-field {\n  width: 100%;\n  height: var(--control-height);\n  padding: 0 12px;\n  font-size: 13px;\n  background: var(--bg-main);\n  color: var(--text);\n  border: var(--border-width) solid var(--border);\n  border-radius: var(--radius-control);\n  font-family: var(--font-family);\n  transition: all var(--motion-duration);\n}\n\n.input-field:focus {\n  outline: none;\n  border-color: var(--primary-hover);\n  box-shadow: 0 0 0 2px rgba(232, 180, 168, 0.1);\n}\n\n.textarea-field {\n  width: 100%;\n  min-height: 200px;\n  padding: 12px;\n  font-size: 13px;\n  background: var(--bg-main);\n  color: var(--text);\n  border: var(--border-width) solid var(--border);\n  border-radius: var(--radius-control);\n  font-family: var(--font-family);\n  resize: vertical;\n  transition: all var(--motion-duration);\n}\n\n.textarea-field:focus {\n  outline: none;\n  border-color: var(--primary-hover);\n  box-shadow: 0 0 0 2px rgba(232, 180, 168, 0.1);\n}\n\n.textarea-field::placeholder {\n  color: var(--text-muted);\n}\n\n.form-group {\n  margin-bottom: 20px;\n}\n\n.form-label {\n  display: block;\n  font-size: 12px;\n  font-weight: 600;\n  color: var(--text-muted);\n  margin-bottom: 8px;\n  text-transform: uppercase;\n  letter-spacing: 0.5px;\n}\n\n.button-group {\n  display: flex;\n  gap: 12px;\n  margin-top: 20px;\n}\n\n.button-group-vertical {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n\n.status-badge {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  padding: 4px 12px;\n  font-size: 12px;\n  font-weight: 500;\n  border-radius: var(--radius-control);\n  background: rgba(232, 180, 168, 0.1);\n  color: var(--primary);\n}\n\n.status-badge.draft {\n  background: rgba(154, 144, 136, 0.1);\n  color: var(--text-muted);\n}\n\n.status-badge.submitted {\n  background: rgba(232, 180, 168, 0.15);\n  color: var(--primary);\n}\n\n.text-muted {\n  color: var(--text-muted);\n  font-size: 12px;\n}\n\n.divider {\n  height: var(--border-width);\n  background: var(--border);\n  margin: 20px 0;\n}\n\n.grid-2col {\n  display: grid;\n  grid-template-columns: 1fr 1fr;\n  gap: 24px;\n}\n\n.section-title {\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--text);\n  margin-bottom: 16px;\n  text-transform: uppercase;\n  letter-spacing: 0.5px;\n}\n\n.table {\n  width: 100%;\n  border-collapse: collapse;\n  font-size: 13px;\n}\n\n.table thead {\n  border-bottom: var(--border-width) solid var(--border);\n}\n\n.table th {\n  padding: 12px;\n  text-align: left;\n  font-weight: 600;\n  color: var(--text-muted);\n  font-size: 11px;\n  text-transform: uppercase;\n  letter-spacing: 0.5px;\n}\n\n.table td {\n  padding: 12px;\n  border-bottom: var(--border-width) solid var(--border);\n  color: var(--text);\n}\n\n.table tbody tr:hover {\n  background: rgba(232, 180, 168, 0.05);\n}\n\n.summary-card {\n  background: var(--bg-card);\n  border: var(--border-width) solid var(--border);\n  border-radius: var(--radius-card);\n  padding: 20px;\n  text-align: center;\n}\n\n.summary-value {\n  font-size: 28px;\n  font-weight: 700;\n  color: var(--primary);\n  margin-bottom: 4px;\n}\n\n.summary-label {\n  font-size: 12px;\n  color: var(--text-muted);\n  text-transform: uppercase;\n  letter-spacing: 0.5px;\n}\n\n.member-list {\n  list-style: none;\n}\n\n.member-item {\n  padding: 12px;\n  border-bottom: var(--border-width) solid var(--border);\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  font-size: 13px;\n}\n\n.member-item:last-child {\n  border-bottom: none;\n}\n\n.member-name {\n  color: var(--text);\n  font-weight: 500;\n}\n\n.member-time {\n  color: var(--text-muted);\n  font-size: 12px;\n}\n\n.icon-check {\n  display: inline-block;\n  width: 16px;\n  height: 16px;\n  background: var(--primary);\n  border-radius: 50%;\n  color: #fff;\n  font-size: 10px;\n  font-weight: 700;\n  line-height: 16px;\n  text-align: center;\n}\n\n.icon-clock {\n  display: inline-block;\n  width: 16px;\n  height: 16px;\n  color: var(--text-muted);\n  font-size: 12px;\n  line-height: 16px;\n  text-align: center;\n}\n\n.filter-group {\n  display: flex;\n  gap: 12px;\n  align-items: center;\n}\n\n.select-field {\n  height: var(--control-height);\n  padding: 0 12px;\n  font-size: 13px;\n  background: var(--bg-main);\n  color: var(--text);\n  border: var(--border-width) solid var(--border);\n  border-radius: var(--radius-control);\n  font-family: var(--font-family);\n  cursor: pointer;\n  transition: all var(--motion-duration);\n}\n\n.select-field:focus {\n  outline: none;\n  border-color: var(--primary-hover);\n}\n\n@media (max-width: 1024px) {\n  .shell-sidebar {\n    width: 160px;\n  }\n  .content-wrapper {\n    margin-left: 160px;\n    width: calc(100% - 160px);\n  }\n  .grid-2col {\n    grid-template-columns: 1fr;\n  }\n}\n\n@media (max-width: 768px) {\n  .shell-sidebar {\n    position: fixed;\n    left: -200px;\n    width: 200px;\n    transition: left var(--motion-duration);\n    z-index: 90;\n  }\n  .shell-sidebar.open {\n    left: 0;\n  }\n  .content-wrapper {\n    margin-left: 0;\n    width: 100%;\n  }\n  [data-aivic-panel] {\n    padding: 24px;\n  }\n}\n  </style>\n  <!--AIVIC_GLOBALS-->\n</head>\n<body>\n  <div data-aivic-shell-pattern=\"sidebar\" data-aivic-nav-position=\"left\" data-aivic-density=\"simple\">\n    <header class=\"shell-header\">\n      <div class=\"shell-header-left\">\n        <div class=\"shell-logo\">My 日報</div>\n      </div>\n      <div class=\"shell-header-right\">\n        <div class=\"user-avatar\">U</div>\n        <div class=\"user-name\">ユーザー</div>\n        <a href=\"./login.html\" class=\"logout-link\">ログアウト</a>\n      </div>\n    </header>\n\n    <aside class=\"shell-sidebar\">\n      <nav>\n        <ul class=\"sidebar-nav\">\n          <li class=\"sidebar-nav-item\">\n            <a class=\"sidebar-nav-link aivic-active\" data-aivic-nav=\"scr-1790334054373\" onclick=\"window.showScreen('scr-1790334054373')\">日報入力</a>\n          </li>\n          <li class=\"sidebar-nav-item\">\n            <a class=\"sidebar-nav-link\" data-aivic-nav=\"scr-1790334064893\" onclick=\"window.showScreen('scr-1790334064893')\">ダッシュボード</a>\n          </li>\n        </ul>\n      </nav>\n    </aside>\n\n    <div class=\"content-wrapper\">\n      <main class=\"content-area\">\n        <div data-aivic-panel=\"scr-1790334054373\"></div>\n        <div data-aivic-panel=\"scr-1790334064893\"></div>\n      </main>\n    </div>\n  </div>\n\n  <!--AIVIC_RUNTIME-->\n</body>\n</html>",
+  "screenTaste": "ダーク"
+}

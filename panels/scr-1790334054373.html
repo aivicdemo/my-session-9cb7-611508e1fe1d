@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My 日報</title>
+  <style>
+:root {
+  --primary: #e8b4a8;
+  --primary-hover: #d99a8e;
+  --bg-main: #1a1410;
+  --bg-card: #242019;
+  --bg-sidebar: #1f1b16;
+  --border: #3a342d;
+  --border-width: 1px;
+  --text: #e8e4df;
+  --text-muted: #9a9088;
+  --top-bar-bg: #0f0c0a;
+  --top-bar-border: #2a241d;
+  --top-bar-text: #d4ccc5;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  --space-unit: 8px;
+  --control-height: 36px;
+  --radius-card: 6px;
+  --radius-control: 4px;
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.6);
+  --motion-duration: 200ms;
+  --surface-texture: 
+    linear-gradient(90deg, transparent 0%, rgba(232, 180, 168, 0.02) 50%, transparent 100%),
+    linear-gradient(0deg, transparent 0%, rgba(232, 180, 168, 0.01) 100%),
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(232, 180, 168, 0.005) 2px,
+      rgba(232, 180, 168, 0.005) 4px
+    );
+  --surface-texture-size: 100% 100%;
+  --surface-texture-position: 0 0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-family);
+  background: var(--bg-main);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+[data-aivic-shell-pattern="sidebar"] {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+}
+
+.shell-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: var(--top-bar-bg);
+  border-bottom: var(--border-width) solid var(--top-bar-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 100;
+}
+
+.shell-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.shell-logo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--top-bar-text);
+  letter-spacing: 0.5px;
+}
+
+.shell-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.user-name {
+  font-size: 13px;
+  color: var(--top-bar-text);
+}
+
+.logout-link {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--motion-duration);
+}
+
+.logout-link:hover {
+  color: var(--primary);
+}
+
+.shell-sidebar {
+  position: fixed;
+  left: 0;
+  top: 56px;
+  width: 200px;
+  height: calc(100vh - 56px);
+  background: var(--bg-sidebar);
+  border-right: var(--border-width) solid var(--border);
+  overflow-y: auto;
+  padding: 24px 0;
+}
+
+.sidebar-nav {
+  list-style: none;
+}
+
+.sidebar-nav-item {
+  margin: 0;
+}
+
+.sidebar-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--motion-duration);
+  border-left: 3px solid transparent;
+}
+
+.sidebar-nav-link:hover {
+  color: var(--text);
+  background: rgba(232, 180, 168, 0.05);
+}
+
+.sidebar-nav-link.aivic-active {
+  color: var(--primary);
+  border-left-color: var(--primary);
+  background: rgba(232, 180, 168, 0.08);
+}
+
+.content-wrapper {
+  margin-left: 200px;
+  margin-top: 56px;
+  width: calc(100% - 200px);
+  height: calc(100vh - 56px);
+  overflow-y: auto;
+}
+
+.content-area {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-main);
+  background-image: var(--surface-texture);
+  background-size: var(--surface-texture-size);
+  background-position: var(--surface-texture-position);
+}
+
+[data-aivic-panel] {
+  width: 100%;
+  height: 100%;
+  padding: 32px;
+  overflow-y: auto;
+}
+
+.card {
+  background: var(--bg-card);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  transition: all var(--motion-duration);
+}
+
+.card:hover {
+  border-color: rgba(232, 180, 168, 0.3);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--control-height);
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition: all var(--motion-duration);
+  font-family: var(--font-family);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-primary:disabled {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.btn-icon {
+  width: var(--control-height);
+  padding: 0;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+}
+
+.btn-icon:hover {
+  color: var(--text);
+}
+
+.input-field {
+  width: 100%;
+  height: var(--control-height);
+  padding: 0 12px;
+  font-size: 13px;
+  background: var(--bg-main);
+  color: var(--text);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-control);
+  font-family: var(--font-family);
+  transition: all var(--motion-duration);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary-hover);
+  box-shadow: 0 0 0 2px rgba(232, 180, 168, 0.1);
+}
+
+.textarea-field {
+  width: 100%;
+  min-height: 200px;
+  padding: 12px;
+  font-size: 13px;
+  background: var(--bg-main);
+  color: var(--text);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-control);
+  font-family: var(--font-family);
+  resize: vertical;
+  transition: all var(--motion-duration);
+}
+
+.textarea-field:focus {
+  outline: none;
+  border-color: var(--primary-hover);
+  box-shadow: 0 0 0 2px rgba(232, 180, 168, 0.1);
+}
+
+.textarea-field::placeholder {
+  color: var(--text-muted);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.button-group-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-control);
+  background: rgba(232, 180, 168, 0.1);
+  color: var(--primary);
+}
+
+.status-badge.draft {
+  background: rgba(154, 144, 136, 0.1);
+  color: var(--text-muted);
+}
+
+.status-badge.submitted {
+  background: rgba(232, 180, 168, 0.15);
+  color: var(--primary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.divider {
+  height: var(--border-width);
+  background: var(--border);
+  margin: 20px 0;
+}
+
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table thead {
+  border-bottom: var(--border-width) solid var(--border);
+}
+
+.table th {
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: var(--border-width) solid var(--border);
+  color: var(--text);
+}
+
+.table tbody tr:hover {
+  background: rgba(232, 180, 168, 0.05);
+}
+
+.summary-card {
+  background: var(--bg-card);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  text-align: center;
+}
+
+.summary-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.member-list {
+  list-style: none;
+}
+
+.member-item {
+  padding: 12px;
+  border-bottom: var(--border-width) solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.member-item:last-child {
+  border-bottom: none;
+}
+
+.member-name {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.member-time {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.icon-check {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background: var(--primary);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.icon-clock {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.filter-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.select-field {
+  height: var(--control-height);
+  padding: 0 12px;
+  font-size: 13px;
+  background: var(--bg-main);
+  color: var(--text);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-control);
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all var(--motion-duration);
+}
+
+.select-field:focus {
+  outline: none;
+  border-color: var(--primary-hover);
+}
+
+@media (max-width: 1024px) {
+  .shell-sidebar {
+    width: 160px;
+  }
+  .content-wrapper {
+    margin-left: 160px;
+    width: calc(100% - 160px);
+  }
+  .grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .shell-sidebar {
+    position: fixed;
+    left: -200px;
+    width: 200px;
+    transition: left var(--motion-duration);
+    z-index: 90;
+  }
+  .shell-sidebar.open {
+    left: 0;
+  }
+  .content-wrapper {
+    margin-left: 0;
+    width: 100%;
+  }
+  [data-aivic-panel] {
+    padding: 24px;
+  }
+}
+  </style>
+  
+<script>
+window.AIVIC_API_URL = "https://772uyvnqfxpzjoed4k3cnncqgu0zkwuc.lambda-url.us-east-1.on.aws/";
+window.AIVIC_APP_ID = "session-9cb78b3c-db23-471b-85a1-5c98dd594f3a";
+window.AIVIC_SYSTEM_NAME = "日報管理業務システム";
+window.AIVIC_TABLES = [{"tableName":"ユーザー","purpose":"日報管理システムのユーザー情報を管理し、認証・認可・監査ログの基盤となるマスタテーブル","columns":[{"name":"ユーザーID","type":"uuid","required":true,"description":"ユーザーの一意識別子"},{"name":"ユーザー名","type":"varchar(100)","required":true,"description":"ログイン時に使用するユーザー名"},{"name":"メールアドレス","type":"varchar(100)","required":true,"description":"ユーザーの連絡先メールアドレス"},{"name":"氏名","type":"varchar(100)","required":true,"description":"ユーザーの表示用氏名"},{"name":"部門","type":"varchar(100)","required":false,"description":"ユーザーが所属する部門"},{"name":"役割","type":"varchar(100)","required":true,"description":"ユーザーの権限レベル（管理者・マネージャー・一般等）"},{"name":"ステータス","type":"varchar(100)","required":true,"description":"ユーザーの状態（有効・無効・休止等）"},{"name":"作成日時","type":"timestamp","required":true,"description":"ユーザーレコード作成日時"},{"name":"更新日時","type":"timestamp","required":true,"description":"ユーザーレコード最終更新日時"},{"name":"作成者","type":"varchar(100)","required":true,"description":"ユーザーレコード作成者のユーザーID"}]},{"tableName":"日報","purpose":"従業員の日々の業務内容、成果、課題を記録・管理し、業務進捗の可視化と報告を実現するシステム","columns":[{"name":"日報ID","type":"uuid","required":true,"description":"日報の一意識別子"},{"name":"ユーザーID","type":"uuid","required":true,"description":"日報を作成したユーザーの識別子、ユーザーテーブルへの外部キー"},{"name":"報告日","type":"timestamp","required":true,"description":"日報が対象とする業務日"},{"name":"業務内容","type":"text","required":true,"description":"当日実施した業務の詳細内容"},{"name":"成果","type":"text","required":false,"description":"当日の業務成果や完了した項目"},{"name":"課題","type":"text","required":false,"description":"当日発生した課題や懸念事項"},{"name":"予定","type":"text","required":false,"description":"翌日以降の予定や計画"},{"name":"ステータス","type":"varchar(100)","required":true,"description":"日報のステータス、下書き/提出/承認等"},{"name":"作成日時","type":"timestamp","required":true,"description":"日報が作成された日時"},{"name":"更新日時","type":"timestamp","required":true,"description":"日報が最後に更新された日時"},{"name":"作成者ID","type":"uuid","required":true,"description":"日報を作成したユーザーの識別子"}]},{"tableName":"日報項目","purpose":"日報に含まれる個別の項目を管理し、日報の構成要素と入力値を記録するテーブル","columns":[{"name":"項目ID","type":"uuid","required":true,"description":"日報項目の一意識別子"},{"name":"日報ID","type":"uuid","required":true,"description":"親となる日報レコードへの外部キー参照"},{"name":"項目名","type":"varchar(100)","required":true,"description":"日報項目の名称（例：業務内容、成果、課題等）"},{"name":"項目値","type":"text","required":true,"description":"日報項目に入力された内容・値"},{"name":"項目順序","type":"integer","required":true,"description":"日報内での項目の表示順序"},{"name":"作成日時","type":"timestamp","required":true,"description":"日報項目が作成された日時"},{"name":"更新日時","type":"timestamp","required":true,"description":"日報項目が最後に更新された日時"},{"name":"作成者ID","type":"uuid","required":true,"description":"日報項目を作成したユーザーへの外部キー参照"}]}];
+window.AIVIC_PRESET_SEED = {"ユーザー":[{"ユーザーID":"rec-001","ユーザー名":"admin_master","メールアドレス":"admin@company.jp","氏名":"山田太郎","部門":"情報システム部","役割":"管理者","ステータス":"有効","作成日時":"2024-01-15T09:30:00+09:00","更新日時":"2024-01-15T09:30:00+09:00","作成者":"system"},{"ユーザーID":"rec-001","ユーザー名":"tanaka.taro","メールアドレス":"tanaka.taro@company.jp","氏名":"田中太郎","部門":"営業部","役割":"マネージャー","ステータス":"有効","作成日時":"2025-01-15 09:30:00","更新日時":"2025-01-15 09:30:00","作成者":"rec-admin-001"},{"ユーザーID":"rec-001","ユーザー名":"tanaka.taro","メールアドレス":"tanaka.taro@company.jp","氏名":"田中太郎","部門":"営業部","役割":"一般","ステータス":"有効","作成日時":"2024-04-01 09:30:00","更新日時":"2025-01-15 14:22:00","作成者":"rec-admin-001"},{"ユーザーID":"rec-001","ユーザー名":"tanaka.taro","メールアドレス":"tanaka.taro@company.jp","氏名":"田中太郎","部門":"経営企画室","役割":"管理者","ステータス":"有効","作成日時":"2024-04-01T09:00:00+09:00","更新日時":"2024-12-15T14:30:00+09:00","作成者":"rec-admin"},{"ユーザーID":"rec-001","ユーザー名":"tanaka.hanako","メールアドレス":"tanaka.hanako@company.jp","氏名":"田中花子","部門":"人事部","役割":"マネージャー","ステータス":"有効","作成日時":"2024-04-01T09:30:00+09:00","更新日時":"2025-01-15T14:20:00+09:00","作成者":"rec-admin-001"},{"ユーザーID":"rec-001","ユーザー名":"tanaka.taro","メールアドレス":"tanaka.taro@company.jp","氏名":"田中太郎","部門":"営業部第二課","役割":"マネージャー","ステータス":"有効","作成日時":"2023-06-15 09:30:00","更新日時":"2025-01-20 14:15:00","作成者":"rec-admin"},{"ユーザーID":"rec-001","ユーザー名":"suzuki.hanako","メールアドレス":"suzuki.hanako@company.jp","氏名":"鈴木花子","部門":"営業部","役割":"マネージャー","ステータス":"休止","作成日時":"2023-04-15 09:30:00","更新日時":"2025-01-10 14:20:00","作成者":"rec-admin-001"},{"ユーザーID":"rec-001","ユーザー名":"tanaka.taro","メールアドレス":"tanaka.taro@company.jp","氏名":"田中太郎","部門":"営業部","役割":"マネージャー","ステータス":"無効","作成日時":"2023-04-15 09:30:00","更新日時":"2025-01-31 14:20:00","作成者":"rec-admin-001"},{"ユーザーID":"rec-001","ユーザー名":"partner_yamada_01","メールアドレス":"yamada.taro@partner-corp.jp","氏名":"山田太郎","部門":"外部パートナー（株式会社パートナーシップ）","役割":"ゲスト","ステータス":"有効","作成日時":"2024-11-15 10:30:00","更新日時":"2024-11-15 10:30:00","作成者":"rec-admin-001"},{"ユーザーID":"rec-001","ユーザー名":"audit_viewer","メールアドレス":"audit.viewer@company.jp","氏名":"監査 太郎","部門":"内部監査室","役割":"監査担当者","ステータス":"有効","作成日時":"2024-04-01T09:00:00+09:00","更新日時":"2025-01-15T14:30:00+09:00","作成者":"rec-admin-001"}],"日報":[{"日報ID":"rec-001","ユーザーID":"usr-0847","報告日":"2024-12-13T00:00:00Z","業務内容":"ABC株式会社と新規取引に関する打ち合わせを実施。製造部門向けの営業提案資料を用いて商品説明を行った。","成果":"ABC株式会社の購買担当者（鈴木部長）から来年1月の試験導入に向けた前向きな返答を得た。見積書提出の承認を取得。","課題":"納期要件が当初予定より1ヶ月短縮される可能性があり、生産部門との調整が必要。","予定":"来週月曜日に見積書を提出予定。12月20日に再度訪問し契約条件を詰める。","ステータス":"提出","作成日時":"2024-12-13T18:45:00Z","更新日時":"2024-12-13T18:45:00Z","作成者ID":"usr-0847"},{"日報ID":"rec-001","ユーザーID":"rec-u-042","報告日":"2024-12-19T00:00:00Z","業務内容":"ログイン機能のバグ修正、単体テストコード作成・実行","成果":"バグ3件修正完了、テストケース15件作成、カバレッジ92%達成","課題":"エッジケース対応で予定より1時間延長、明日レビュー予定","予定":"コードレビュー対応、統合テスト環境での動作確認","ステータス":"提出","作成日時":"2024-12-19T17:45:00Z","更新日時":"2024-12-19T17:45:00Z","作成者ID":"rec-u-042"},{"日報ID":"rec-001","ユーザーID":"usr-0847","報告日":"2024-11-15T00:00:00Z","業務内容":"システム開発プロジェクトの進捗管理、ステークホルダー会議開催、リスク評価実施","成果":"開発チームとの課題共有完了、対策案3件を経営層に報告","課題":"API統合作業が計画比3日遅延、テスト環境の構築遅れにより納期リスク発生","予定":"遅延原因の詳細分析、追加リソース配置の検討、納期短縮対策の実行開始","ステータス":"提出","作成日時":"2024-11-15T17:30:00Z","更新日時":"2024-11-15T17:30:00Z","作成者ID":"usr-0847"},{"日報ID":"rec-001","ユーザーID":"usr-0847","報告日":"2024-12-31","業務内容":"12月度の売上・仕入帳簿の集計、経費精算書の確認、銀行残高照合を実施","成果":"月次決算書の作成完了、帳簿の不一致2件を特定し修正完了","課題":"給与データの遅延提出により決算確定が1日遅延の見込み","予定":"1月6日に経理部長への決算報告、1月中旬に税理士への提出資料準備","ステータス":"提出","作成日時":"2024-12-31 17:45:00","更新日時":"2024-12-31 17:45:00","作成者ID":"usr-0847"},{"日報ID":"rec-001","ユーザーID":"user-047","報告日":"2024-12-19","業務内容":"新商品『スマートオフィスパック』の企画案作成。競合分析、ターゲット市場調査、価格戦略の検討を実施","成果":"企画案ドキュメント完成。提案資料（PowerPoint 25枚）作成完了。経営層向けプレゼン資料の初版化","課題":"製造部門との仕様調整が未了。コスト試算で目標利益率達成に課題あり","予定":"明日営業部長との事前打ち合わせ。来週火曜に経営会議でレビュー予定","ステータス":"提出","作成日時":"2024-12-19T18:45:00","更新日時":"2024-12-19T18:45:00","作成者ID":"user-047"},{"日報ID":"rec-001","ユーザーID":"usr-0847","報告日":"2024-12-20T00:00:00Z","業務内容":"顧客問い合わせ対応12件、システム障害報告3件の初期対応と状況確認を実施","成果":"緊急案件2件を解決、残り10件は技術チームへエスカレーション完了","課題":"月末繁忙期のため対応時間が平均35分と通常より長延、未解決案件の引き継ぎ漏れリスク","予定":"明日は未解決案件10件の進捗確認と顧客への進捗報告、新入社員への引き継ぎ研修実施予定","ステータス":"提出","作成日時":"2024-12-20T18:45:00Z","更新日時":"2024-12-20T19:30:00Z","作成者ID":"usr-0847"},{"日報ID":"rec-001","ユーザーID":"user-0847","報告日":"2024-12-20T00:00:00Z","業務内容":"A型プレス機3台の稼働管理、部品加工ロット#2401～#2403の進捗確認、品質検査実施","成果":"予定数量の98%を完了。不良品率0.8%。納期遵守達成","課題":"プレス機#2号機で油圧異常警告が多発。部品#2402ロットで寸法超過不良が3個発生","予定":"油圧システム点検手配、不良品の原因分析と再加工スケジュール調整","ステータス":"提出","作成日時":"2024-12-20T16:45:00Z","更新日時":"2024-12-20T17:12:00Z","作成者ID":"user-0847"},{"日報ID":"rec-001","ユーザーID":"usr-045","報告日":"2025-01-15T00:00:00Z","業務内容":"新卒採用選考（最終面接）3名実施、内定者3名の入社手続き書類確認・修正対応","成果":"最終面接合格者3名決定、内定通知書発送完了。入社手続き書類提出率83%達成","課題":"内定者1名の住所確認書類未提出。提出期限2月末までに対応要","予定":"明日内定者説明会開催（14:00〜）。未提出者への督促メール送信予定","ステータス":"提出","作成日時":"2025-01-15T17:30:00Z","更新日時":"2025-01-15T17:45:00Z","作成者ID":"usr-045"},{"日報ID":"rec-001","ユーザーID":"usr-0847","報告日":"2024-12-20T00:00:00Z","業務内容":"A社からの受注3件の処理、納期調整2件、請求書発行","成果":"受注処理完了3件、納期変更対応2件、請求書3枚発行済み","課題":"B社納期短縮要望への在庫確認に1日要する見込み","予定":"B社納期確認回答、C社見積もり提出準備","ステータス":"提出","作成日時":"2024-12-20T17:30:00Z","更新日時":"2024-12-20T17:45:00Z","作成者ID":"usr-0847"},{"日報ID":"rec-001","ユーザーID":"usr-0847","報告日":"2024-11-15T00:00:00Z","業務内容":"A型製品ロット#2411-0847の全数検査実施、不適合品の分類と原因分析","成果":"検査完了500個中12個の不適合を検出、不適合率2.4%、原因は金型摩耗と判定","課題":"金型交換予定が12月中旬のため、それまでの品質維持が課題。改善指示書を製造部に発行済み","予定":"明日は改善指示の実施状況確認、製造部との改善打ち合わせ予定","ステータス":"提出","作成日時":"2024-11-15T17:30:00Z","更新日時":"2024-11-15T17:45:00Z","作成者ID":"usr-0847"}],"日報項目":[{"項目ID":"rec-001","日報ID":"rep-2025-0147","項目名":"商談内容","項目値":"株式会社エースシステムズ様との初期接触。クラウド型在庫管理システムの導入検討。予算規模500万円程度、導入時期は4月を想定。次回訪問は来週金曜日に決定。","項目順序":2,"作成日時":"2025-01-16T18:45:00+09:00","更新日時":"2025-01-16T18:45:00+09:00","作成者ID":"usr-0892"},{"項目ID":"rec-001","日報ID":"rep-20250115-001","項目名":"技術的課題","項目値":"APIレスポンスタイムが目標の200msを超過（現在平均250ms）。データベースクエリの最適化が必要。","項目順序":3,"作成日時":"2025-01-15T18:30:00+09:00","更新日時":"2025-01-15T18:30:00+09:00","作成者ID":"usr-engineer-002"},{"項目ID":"rec-001","日報ID":"rep-20250115-001","項目名":"マイルストーン達成状況","項目値":"Phase 2 リリース予定通り完了。ユーザー認証機能、決済連携、レポート機能の3機能を実装。テスト合格率98%。","項目順序":1,"作成日時":"2025-01-15T09:30:00+09:00","更新日時":"2025-01-15T09:30:00+09:00","作成者ID":"usr-pm-002"},{"項目ID":"rec-001","日報ID":"rep-2025-0147","項目名":"顧客対応件数と解決状況","項目値":"本日対応件数23件、当日解決率87%（20件解決）、保留中3件","項目順序":1,"作成日時":"2025-01-15 17:30:00","更新日時":"2025-01-15 17:30:00","作成者ID":"usr-staff-0284"},{"項目ID":"rec-001","日報ID":"rep-2024-1127-001","項目名":"市場調査結果","項目値":"20代女性ターゲットの購買意欲は前月比+12%。SNS経由の認知度が68%と高い。競合商品との価格差は平均3,200円。","項目順序":1,"作成日時":"2024-11-27T09:30:00+09:00","更新日時":"2024-11-27T14:15:00+09:00","作成者ID":"usr-0847"},{"項目ID":"rec-001","日報ID":"rep-2024-12-15-001","項目名":"生産実績","項目値":"A型部品 850個生産、歩留まり98.2%、目標達成","項目順序":1,"作成日時":"2024-12-15T17:30:00+09:00","更新日時":"2024-12-15T17:30:00+09:00","作成者ID":"usr-0042"},{"項目ID":"rec-001","日報ID":"rep-2025-0142","項目名":"採用面接実績","項目値":"本日実施数：5件。営業職3名（評価A2名、B1名）、企画職2名（評価B）。内定候補者1名決定。","項目順序":1,"作成日時":"2025-01-15T17:30:00+09:00","更新日時":"2025-01-15T17:30:00+09:00","作成者ID":"usr-0847"},{"項目ID":"rec-001","日報ID":"rep-20250115-001","項目名":"受注確定案件","項目値":"A社システム導入案件（契約金額480万円、納期2025年3月末）確定。B社追加受注2件（合計320万円）","項目順序":1,"作成日時":"2025-01-15T09:30:00+09:00","更新日時":"2025-01-15T09:30:00+09:00","作成者ID":"usr-0847"},{"項目ID":"rec-001","日報ID":"rep-20250115-qa","項目名":"テスト実行結果","項目値":"総ケース数：847件、成功：823件、失敗：24件、スキップ：0件。成功率97.2%。","項目順序":1,"作成日時":"2025-01-15T09:30:00+09:00","更新日時":"2025-01-15T14:45:00+09:00","作成者ID":"usr-0847"},{"項目ID":"rec-001","日報ID":"rep-20250115-001","項目名":"チーム売上目標達成度","項目値":"目標 2,500万円に対し実績 2,180万円（達成率87.2%）。大型案件3件が予定より遅延。","項目順序":1,"作成日時":"2025-01-15T18:30:00+09:00","更新日時":"2025-01-15T18:30:00+09:00","作成者ID":"usr-0847"}]};
+window.AIVIC_PAGE_SCREEN_ID = "scr-1790334054373";
+window.AIVIC_PAGE_INIT_JS = "function(container, apiUrl, tables) {\n  const form = container.querySelector('#reportForm');\n  const reportDate = container.querySelector('#reportDate');\n  const reportContent = container.querySelector('#reportContent');\n  const reportContainer = container.querySelector('#reportContainer');\n\n  function setTodayDate() {\n    const today = new Date();\n    const year = today.getFullYear();\n    const month = String(today.getMonth() + 1).padStart(2, '0');\n    const day = String(today.getDate()).padStart(2, '0');\n    reportDate.value = year + '-' + month + '-' + day;\n  }\n\n  function showToast(message) {\n    const toast = document.createElement('div');\n    toast.className = 'toast';\n    toast.textContent = message;\n    document.body.appendChild(toast);\n    setTimeout(() => {\n      toast.style.animation = 'slideInUp 300ms ease-out reverse';\n      setTimeout(() => toast.remove(), 300);\n    }, 3000);\n  }\n\n  function formatDate(dateStr) {\n    const date = new Date(dateStr);\n    const year = date.getFullYear();\n    const month = String(date.getMonth() + 1).padStart(2, '0');\n    const day = String(date.getDate()).padStart(2, '0');\n    return year + '年' + month + '月' + day + '日';\n  }\n\n  function formatDateTime(dateStr) {\n    const date = new Date(dateStr);\n    const hours = String(date.getHours()).padStart(2, '0');\n    const minutes = String(date.getMinutes()).padStart(2, '0');\n    return formatDate(dateStr) + ' ' + hours + ':' + minutes;\n  }\n\n  function renderReports() {\n    const selectedDate = reportDate.value;\n    const today = new Date();\n    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');\n\n    if (!tables || !tables.reports || tables.reports.length === 0) {\n      reportContainer.innerHTML = '<div class=\"empty-state\"><div class=\"empty-state-icon\">📝</div><div class=\"empty-state-text\">本日の日報はまだ登録されていません</div></div>';\n      return;\n    }\n\n    const todayReports = tables.reports.filter(report => report.reportDate === todayStr);\n\n    if (todayReports.length === 0) {\n      reportContainer.innerHTML = '<div class=\"empty-state\"><div class=\"empty-state-icon\">📝</div><div class=\"empty-state-text\">本日の日報はまだ登録されていません</div></div>';\n      return;\n    }\n\n    reportContainer.innerHTML = todayReports.map((report, idx) => `\n      <div class=\"report-card\">\n        <div class=\"report-header\">\n          <div class=\"report-date\">${formatDate(report.reportDate)}</div>\n          <span class=\"report-status ${report.status === 'submitted' ? 'status-submitted' : 'status-draft'}\">${report.status === 'submitted' ? '提出済み' : '下書き'}</span>\n        </div>\n        <div class=\"report-content\">${report.content}</div>\n        <div class=\"report-meta\">\n          <span>作成: ${formatDateTime(report.createdAt)}</span>\n          ${report.submittedAt ? '<span>提出: ' + formatDateTime(report.submittedAt) + '</span>' : ''}\n        </div>\n        <div class=\"report-actions\">\n          ${report.status === 'submitted' ? '<button type=\"button\" class=\"btn btn-primary\" style=\"width: auto;\" data-submit-idx=\"' + idx + '\">通知を送信</button>' : ''}\n          ${report.status === 'draft' ? '<button type=\"button\" class=\"btn btn-secondary\" style=\"width: auto;\" data-edit-idx=\"' + idx + '\">編集</button>' : ''}\n          ${report.status === 'draft' ? '<button type=\"button\" class=\"btn-icon\" data-delete-idx=\"' + idx + '\">🗑️</button>' : ''}\n        </div>\n      </div>\n    `).join('');\n  }\n\n  form.addEventListener('submit', function(e) {\n    e.preventDefault();\n    const date = reportDate.value;\n    const content = reportContent.value.trim();\n\n    if (!date || !content) return;\n\n    const today = new Date();\n    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');\n    if (date !== todayStr) {\n      showToast('本日の日報のみ登録できます');\n      return;\n    }\n\n    if (!tables) tables = {};\n    if (!tables.reports) tables.reports = [];\n\n    const now = new Date().toISOString();\n    tables.reports.push({\n      id: Math.random().toString(36).substr(2, 9),\n      reportDate: date,\n      content: content,\n      status: 'draft',\n      createdAt: now,\n      submittedAt: null\n    });\n\n    showToast('日報を登録しました');\n    reportContent.value = '';\n    renderReports();\n  });\n\n  container.addEventListener('click', function(e) {\n    const submitBtn = e.target.closest('[data-submit-idx]');\n    if (submitBtn) {\n      const idx = parseInt(submitBtn.getAttribute('data-submit-idx'));\n      const today = new Date();\n      const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');\n      if (tables.reports[idx].reportDate === todayStr && tables.reports[idx].status === 'submitted') {\n        tables.reports[idx].submittedAt = new Date().toISOString();\n        showToast('チームに通知を送信しました');\n        renderReports();\n      }\n    }\n\n    const editBtn = e.target.closest('[data-edit-idx]');\n    if (editBtn) {\n      const idx = parseInt(editBtn.getAttribute('data-edit-idx'));\n      if (tables.reports[idx].status === 'draft') {\n        reportDate.value = tables.reports[idx].reportDate;\n        reportContent.value = tables.reports[idx].content;\n        tables.reports.splice(idx, 1);\n        renderReports();\n        showToast('編集モードに戻りました');\n      }\n    }\n\n    const deleteBtn = e.target.closest('[data-delete-idx]');\n    if (deleteBtn) {\n      const idx = parseInt(deleteBtn.getAttribute('data-delete-idx'));\n      if (tables.reports[idx].status === 'draft') {\n        tables.reports.splice(idx, 1);\n        showToast('日報を削除しました');\n        renderReports();\n      }\n    }\n  });\n\n  setTodayDate();\n  renderReports();\n}";
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div data-aivic-shell-pattern="sidebar" data-aivic-nav-position="left" data-aivic-density="simple">
+    <header class="shell-header">
+      <div class="shell-header-left">
+        <div class="shell-logo">My 日報</div>
+      </div>
+      <div class="shell-header-right">
+        <div class="user-avatar">U</div>
+        <div class="user-name">ユーザー</div>
+        <a href="./login.html" class="logout-link">ログアウト</a>
+      </div>
+    </header>
+
+    <aside class="shell-sidebar">
+      <nav>
+        <ul class="sidebar-nav">
+          <li class="sidebar-nav-item">
+            <a class="sidebar-nav-link aivic-active" data-aivic-nav="scr-1790334054373" href="./scr-1790334054373.html">日報入力</a>
+          </li>
+          <li class="sidebar-nav-item">
+            <a class="sidebar-nav-link" data-aivic-nav="scr-1790334064893" href="./scr-1790334064893.html">ダッシュボード</a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <div class="content-wrapper">
+      <main class="content-area">
+        <div data-aivic-panel="scr-1790334054373" style="display:block">
+  <div class="panel-header">
+    <h1 class="panel-title">日報入力・管理</h1>
+    <p class="panel-subtitle">今日の業務内容を入力し、チームに共有します</p>
+  </div>
+
+  <div class="input-section">
+    <form id="reportForm">
+      <div class="form-group">
+        <label class="form-label">報告日<span class="form-required">*</span></label>
+        <input type="date" id="reportDate" class="date-input" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">業務内容<span class="form-required">*</span></label>
+        <textarea id="reportContent" class="textarea-input" placeholder="今日何をしたか、詳しく入力してください" required></textarea>
+      </div>
+
+      <div class="button-group">
+        <button type="submit" class="btn btn-primary">日報を登録</button>
+        <button type="reset" class="btn btn-secondary">クリア</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="section-title">本日の日報</div>
+  <div id="reportContainer" class="report-list">
+    <div class="empty-state">
+      <div class="empty-state-icon">📝</div>
+      <div class="empty-state-text">本日の日報はまだ登録されていません</div>
+    </div>
+  </div>
+</div>
+        <div data-aivic-panel="scr-1790334064893" style="display:none"></div>
+      </main>
+    </div>
+  </div>
+
+  
+<script>
+(function() {
+  var TABLE_DEFS = window.AIVIC_TABLES || [];
+  var PRESET_SEED = window.AIVIC_PRESET_SEED || {};
+  var SYSTEM_NAME = window.AIVIC_SYSTEM_NAME || "";
+  var APP_ID = window.AIVIC_APP_ID || "";
+  var API_URL = (window.AIVIC_API_URL && window.AIVIC_API_URL !== "REPLACE_WITH_API_URL")
+    ? window.AIVIC_API_URL : window.location.origin;
+
+  // 通知 helper ( SPA 版と同じ )
+  window.aivicNotify = (function() {
+    function ensureContainer() {
+      var c = document.getElementById("aivic-toast-container");
+      if (c) return c;
+      c = document.createElement("div");
+      c.id = "aivic-toast-container";
+      c.style.cssText = "position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:360px;";
+      document.body.appendChild(c);
+      return c;
+    }
+    function show(msg, type) {
+      var c = ensureContainer();
+      var el = document.createElement("div");
+      el.textContent = msg;
+      el.style.cssText = "padding:10px 16px;border-radius:8px;font-size:13px;line-height:1.4;pointer-events:auto;color:#fff;background:" + (type === "error" ? "#dc2626" : "#d97706");
+      c.appendChild(el);
+      setTimeout(function() {
+        el.style.transition = "opacity .3s";
+        el.style.opacity = "0";
+        setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
+      }, type === "error" ? 6000 : 4500);
+    }
+    return {
+      error: function(msg) { show("❌ " + msg, "error"); },
+      warn:  function(msg) { show("⚠️ " + msg, "warn"); },
+    };
+  })();
+
+  // CRUD API ( SPA 版と同じ )
+  window.aivicApi = (function() {
+    function dbErr(op) { window.aivicNotify.error("データベースエラー ( " + op + " ): APIサーバーに接続できません。"); }
+    function newId() { return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : "id-" + Date.now() + "-" + Math.random().toString(36).slice(2); }
+    function q(i) {
+      var t = TABLE_DEFS[i];
+      var dbP = (window.AIVIC_DB_TYPE && window.AIVIC_DB_TYPE !== "dynamodb") ? "&db=" + encodeURIComponent(window.AIVIC_DB_TYPE) : "";
+      return "?app=" + encodeURIComponent(APP_ID) + "&system=" + encodeURIComponent(SYSTEM_NAME) + "&table=" + encodeURIComponent(t ? t.tableName : "table" + i) + dbP;
+    }
+    return {
+      list: async function(tableIndex) {
+        if (!API_URL) return [];
+        try { var r = await fetch(API_URL + "/api/" + tableIndex + q(tableIndex)); var d = await r.json(); return Array.isArray(d) ? d : (d.items || []); }
+        catch(e) { dbErr("データ取得"); return []; }
+      },
+      save: async function(tableIndex, item) {
+        if (!API_URL) { dbErr("保存"); return null; }
+        var now = new Date().toISOString();
+        var rec = Object.assign({}, item, { id: item.id || newId(), createdAt: item.createdAt || now, updatedAt: now });
+        try { var r = await fetch(API_URL + "/api/" + tableIndex + q(tableIndex), { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(rec) }); return await r.json(); }
+        catch(e) { dbErr("保存"); return null; }
+      },
+      update: async function(tableIndex, id, changes) {
+        if (!API_URL) { dbErr("更新"); return null; }
+        try { var r = await fetch(API_URL + "/api/" + tableIndex + "/" + id + q(tableIndex), { method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(Object.assign({}, changes, {updatedAt: new Date().toISOString()})) }); return await r.json(); }
+        catch(e) { dbErr("更新"); return null; }
+      },
+      delete: async function(tableIndex, id) {
+        if (!API_URL) { dbErr("削除"); return {deleted:false}; }
+        try { await fetch(API_URL + "/api/" + tableIndex + "/" + id + q(tableIndex), {method:"DELETE"}); return {deleted:true}; }
+        catch(e) { dbErr("削除"); return {deleted:false}; }
+      },
+    };
+  })();
+
+  // showScreen はマルチページ構成ではページ遷移として動く。
+  var _aivicNavLastTime = 0;
+  var _aivicNavLastTarget = "";
+  var _aivicReady = false;
+  window.showScreen = function(screenId) {
+    if (!screenId) return;
+    if (screenId === window.AIVIC_PAGE_SCREEN_ID) return;
+    var targetPath = './' + encodeURIComponent(screenId) + '.html';
+    var currentName = (window.location.pathname.split('/').pop() || '');
+    if (currentName === (encodeURIComponent(screenId) + '.html') ||
+        currentName === (screenId + '.html')) {
+      return;
+    }
+    var now = Date.now();
+    if (_aivicNavLastTarget === targetPath && (now - _aivicNavLastTime) < 100) {
+      console.warn('[aivic] showScreen 連続呼び出し検知。 無限ループ防止のため抑制:', screenId);
+      return;
+    }
+    if (!_aivicReady) {
+      console.warn('[aivic] DOMContentLoaded 前の showScreen 呼び出し。 抑制:', screenId);
+      return;
+    }
+    _aivicNavLastTime = now;
+    _aivicNavLastTarget = targetPath;
+    window.location.href = targetPath;
+  };
+
+  function seedAllIfEmpty() {
+    if (!API_URL) return Promise.resolve();
+    return Promise.all(TABLE_DEFS.map(function(t, i) {
+      var preset = PRESET_SEED[t.tableName];
+      if (!Array.isArray(preset) || preset.length === 0) return Promise.resolve();
+      return window.aivicApi.list(i).then(function(existing) {
+        if (existing && existing.length > 0) return;
+        return Promise.all(preset.map(function(row) { return window.aivicApi.save(i, row); }));
+      }).catch(function() {});
+    }));
+  }
+
+  // ── 初期表示: このページ専用の panel に initFn を実行 ──
+  document.addEventListener("DOMContentLoaded", function() {
+    setTimeout(function() { _aivicReady = true; }, 1500);
+    var pageScreenId = window.AIVIC_PAGE_SCREEN_ID;
+    if (!pageScreenId) return;
+
+    // AI シェルが SPA 用の初期表示処理を持っていても、マルチページでは
+    // このファイルに割り当てられた画面だけを表示する。
+    document.querySelectorAll('[data-aivic-panel]').forEach(function(panel) {
+      var isCurrent = panel.getAttribute('data-aivic-panel') === pageScreenId;
+      panel.style.display = isCurrent ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('[data-aivic-nav]').forEach(function(btn) {
+      var isActive = btn.getAttribute("data-aivic-nav") === pageScreenId;
+      btn.classList.toggle("aivic-active", isActive);
+      btn.setAttribute("aria-current", isActive ? "page" : "false");
+    });
+
+    var container = document.querySelector('[data-aivic-panel="' + pageScreenId + '"]');
+    if (!container) return;
+
+    // content 要素の hidden 強制除去 ( 2026-05-24 Playwright 大量 fail 対応 )
+    var isModalLike = function(el) {
+      if (!el || !el.classList) return false;
+      var cn = String(el.className || "");
+      if (/\bmodal\b|\bdialog\b|\boverlay\b|\bpopup\b|\bdropdown\b|\btooltip\b/i.test(cn)) return true;
+      var role = el.getAttribute && el.getAttribute("role");
+      if (role === "dialog" || role === "alertdialog" || role === "tooltip" || role === "menu") return true;
+      if (el.hasAttribute && (el.hasAttribute("data-modal") || el.hasAttribute("data-dropdown") || el.hasAttribute("data-popup") || el.hasAttribute("data-aivic-overlay"))) return true;
+      // 【2026-06-25】 class/role が無くても inline で画面を覆う overlay ( position:fixed ) は modal 扱いにして、
+      //  content 強制可視化が誤ってダイアログをロード時に表示してしまわないようにする。
+      if (el.style && el.style.position === "fixed") return true;
+      return false;
+    };
+    var unhideContentElements = function(root) {
+      var all = root.querySelectorAll('.hidden, [hidden], [style*="display:none"], [style*="display: none"]');
+      for (var k = 0; k < all.length; k++) {
+        var el = all[k];
+        if (isModalLike(el)) continue;
+        var p = el.parentElement;
+        var insideModal = false;
+        while (p && p !== root) {
+          if (isModalLike(p)) { insideModal = true; break; }
+          p = p.parentElement;
+        }
+        if (insideModal) continue;
+        el.classList.remove('hidden');
+        el.removeAttribute('hidden');
+        if (el.style && el.style.display === 'none') el.style.display = '';
+      }
+    };
+    try { unhideContentElements(container); } catch (e) { console.warn('[aivic] unhideContent failed:', e); }
+
+    var initJsSource = window.AIVIC_PAGE_INIT_JS;
+    if (!initJsSource) {
+      seedAllIfEmpty();
+      return;
+    }
+    var initFn = null;
+    try {
+      initFn = (new Function("return (" + initJsSource + ")"))();
+    } catch (e) {
+      console.error("[aivic] initJs compile error:", pageScreenId, e);
+      return;
+    }
+    if (typeof initFn !== "function") return;
+
+    seedAllIfEmpty().then(function() {
+      return Promise.all(TABLE_DEFS.map(function(t, i) {
+        return window.aivicApi.list(i)
+          .then(function(records) { return Object.assign({}, t, { records: records }); })
+          .catch(function() { return Object.assign({}, t, { records: [] }); });
+      }));
+    }).then(function(tables) {
+      try { initFn(container, API_URL, tables); } catch (e) { console.error("[aivic] initFn error:", pageScreenId, e); }
+      _aivicReady = true;
+    });
+  });
+
+  // 【2026-06-27 強化・必ず閉じられる保証】 モーダル/ダイアログを確実に閉じる安全網。
+  //  旧版は Esc のみ + セレクタ .overlay が class="modal-overlay" にマッチせず ( クラストークンが別 )
+  //  閉じられなかった ( ユーザー報告 2026-06-27: ダイアログが閉じない ) 。 ① Esc ② オーバーレイ背景クリック
+  //  ③ 閉じる系ボタン の 3 経路で閉じる。 セレクタは複合クラスも拾うよう [class*="overlay"] を含む。
+  //  閉じ方は「開クラス ( active/open/show 等 ) があれば外す ( 再オープン可 ) 、 無ければ inline display:none」。
+  //  modal-header 等の sub-part を誤って隠さないため [class*="modal"] は使わない。
+  var AIVIC_OVERLAY_SELECTOR = '[class*="overlay"],[data-aivic-overlay],[data-modal],[role="dialog"],[role="alertdialog"]';
+  var aivicCloseOverlay = function(el) {
+    if (!el || !el.classList) return;
+    var openClasses = ["active", "open", "show", "visible", "is-open", "is-active", "show-modal"];
+    var removed = false;
+    for (var c = 0; c < openClasses.length; c++) {
+      if (el.classList.contains(openClasses[c])) { el.classList.remove(openClasses[c]); removed = true; }
+    }
+    if (!removed && el.style) el.style.display = "none";
+  };
+  document.addEventListener("keydown", function(e) {
+    if (e.key !== "Escape" && e.keyCode !== 27) return;
+    var ov = document.querySelectorAll(AIVIC_OVERLAY_SELECTOR);
+    for (var i = 0; i < ov.length; i++) aivicCloseOverlay(ov[i]);
+  });
+  document.addEventListener("click", function(e) {
+    var t = e.target;
+    if (!t) return;
+    if (t.closest) {
+      var closer = t.closest('.modal-close,[data-modal-close],[data-close],[data-dismiss]');
+      if (closer) {
+        var oc = closer.closest(AIVIC_OVERLAY_SELECTOR);
+        if (oc) { aivicCloseOverlay(oc); return; }
+      }
+    }
+    // 背景 ( オーバーレイ要素そのもの ) を直接クリックした時のみ閉じる ( モーダル本体クリックでは閉じない ) 。
+    if (t.matches && t.matches(AIVIC_OVERLAY_SELECTOR) && t === e.target) {
+      aivicCloseOverlay(t);
+    }
+  });
+  // 【2026-06-28 強化・ロード時に必ず閉じる】 生成 AI が overlay を初期 display:none にし忘れた場合でも、
+  //  ロード直後にダイアログが画面を覆って操作不能になる事故 ( ユーザー報告 2026-06-28: ダイアログが常に表示され
+  //  閉じられない ) を防ぐ。 認識可能な overlay/dialog セレクタに該当する要素はロード時に必ず閉じる
+  //  ( 開クラス除去 or display:none ) 。 真にロード時表示すべき業務コンテンツは overlay セレクタに該当しないため
+  //  影響しない ( パネルコンテナは data-aivic-panel で別管理 ) 。
+  var aivicHideOverlaysOnLoad = function() {
+    var ov = document.querySelectorAll(AIVIC_OVERLAY_SELECTOR);
+    for (var i = 0; i < ov.length; i++) aivicCloseOverlay(ov[i]);
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", aivicHideOverlaysOnLoad);
+  } else {
+    aivicHideOverlaysOnLoad();
+  }
+})();
+
+</script>
+</body>
+</html>
